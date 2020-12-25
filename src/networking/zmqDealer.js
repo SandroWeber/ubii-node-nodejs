@@ -73,28 +73,17 @@ class ZmqDealer {
 
   /**
    * Send a payload (string or Buffer object) to the specified dealer client.
-   * @param {string} toClientId
    * @param {(string|Buffer)} payload
    */
-  send(toClientId, payload) {
+  send(payload) {
     // send
-    this.socket.send([toClientId, '', payload]);
-  }
-
-  /**
-   * Ping the specified client.
-   * @param {string} toClientId
-   * @param {function} callback Callback function called when the pong message is received from the specified client.
-   */
-  ping(toClientId, callback) {
-    this.waitingPongCallbacks.set(toClientId.toString(), callback);
-    this.send(toClientId, PING_MESSAGE);
+    this.socket.send(payload);
   }
 
   toString() {
     let status = this.ready ? 'ready' : 'not ready';
 
-    return this.identity + ' | ' + status + ' | ZMQ-ROUTER ' + this.endpoint;
+    return this.identity + ' | ' + status + ' | ZMQ-DEALER ' + this.endpoint;
   }
 }
 
