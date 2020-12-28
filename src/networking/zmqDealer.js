@@ -1,5 +1,4 @@
 const zmq = require('zeromq');
-const { PING_MESSAGE, PONG_MESSAGE } = require('./constants.js');
 
 class ZmqDealer {
   /**
@@ -38,7 +37,7 @@ class ZmqDealer {
       if (!this.onMessage) {
         namida.logFailure('ZMQ router socket', 'no callback for message handling set!');
       } else {
-        this.onMessage(envelope, payload);
+        this.onMessage(payload);
       }
     });
 

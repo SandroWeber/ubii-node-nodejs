@@ -45,6 +45,41 @@ class UbiiNode {
       namida.logFailure('UbiiNode.initialize()', 'client registration failed');
       return;
     }
+
+    //console.info(this.serverSpecification);
+    console.info(this.clientSpecification);
+
+    this.connectTopicdataSocket();
+
+    /* TESTING */
+    let testTopic = '/test/topic';
+    let token = await this.subscribeTopic(testTopic, (topic, msg) => {
+      console.info('custom sub callback - topic: ' + topic);
+    });
+    console.info('init() - sub token:');
+    console.info(token);
+
+    this.publish({
+      topicDataRecord: {
+        topic: testTopic,
+        timestamp: this.generateTimestamp(),
+        string: 'some test string'
+      }
+    });
+
+    setTimeout(() => {
+      this.publish({
+        topicDataRecordList: {
+          elements: [
+            {
+              topic: testTopic,
+              timestamp: this.generateTimestamp(),
+              string: 'some other string'
+            }
+          ]
+        }
+      });
+    }, 1000);
   }
 
   connectServiceSocket() {
@@ -62,21 +97,20 @@ class UbiiNode {
       );
     }
 
-    this.topicdataTranslator = new ProtobufTranslator(MSG_TYPES.TOPIC_DATA);
+    this.translatorTopicData = new ProtobufTranslator(MSG_TYPES.TOPIC_DATA);
     this.zmqDealer = new ZmqDealer(
       this.clientSpecification.id,
       'tcp',
       this.masterNodeIP + ':' + this.serverSpecification.portTopicDataZmq
     );
-    this.zmqDealer.onMessageReceived((messageBuffer) => {
-      let topicdata = this.topicdataTranslator.createPayloadFromBuffer(messageBuffer);
-      this._onTopicDataMessageReceived(topicdata);
-    });
+    this.zmqDealer.onMessageReceived(this._onTopicDataMessageReceived.bind(this));
   }
 
-  _onTopicDataMessageReceived(message) {
-    let records = message.topicDataRecordList || [];
-    if (message.topicDataRecord) records.push(message.topicDataRecord);
+  _onTopicDataMessageReceived(messageBuffer) {
+    let topicdata = this.translatorTopicData.createMessageFromBuffer(messageBuffer);
+
+    let records = topicdata.topicDataRecordList || [];
+    if (topicdata.topicDataRecord) records.push(topicdata.topicDataRecord);
 
     records.forEach((record) => {
       /*if (record && record.topic) {
@@ -118,31 +152,37 @@ class UbiiNode {
    * @param {function} callback
    */
   subscribeTopic(topic, callback) {
-    let message = {
-      topic: DEFAULT_TOPICS.SERVICES.TOPIC_SUBSCRIPTION,
-      topicSubscription: {
-        clientId: this.clientSpecification.id,
-        subscribeTopics: [topic]
-      }
-    };
-
-    return this.callService(message).then(
-      (reply) => {
-        if (reply.success !== undefined && reply.success !== null) {
-          let callbacks = this.topicDataCallbacks.get(topic);
-          if (callbacks && callbacks.length > 0) {
-            callbacks.push(callback);
-          } else {
-            this.topicDataCallbacks.set(topic, [callback]);
-          }
-        } else {
-          console.error('ClientNodeWeb - subscribe failed (' + topic + ')\n' + reply);
+    return new Promise((resolve, reject) => {
+      let message = {
+        topic: DEFAULT_TOPICS.SERVICES.TOPIC_SUBSCRIPTION,
+        topicSubscription: {
+          clientId: this.clientSpecification.id,
+          subscribeTopics: [topic]
         }
-      },
-      (error) => {
-        console.error(error);
-      }
-    );
+      };
+
+      this.callService(message).then(
+        (reply) => {
+          if (reply.success !== undefined && reply.success !== null) {
+            /*let callbacks = this.topicDataCallbacks.get(topic);
+            if (callbacks && callbacks.length > 0) {
+              callbacks.push(callback);
+            } else {
+              this.topicDataCallbacks.set(topic, [callback]);
+            }*/
+            let token = this.topicdata.subscribe(topic, callback);
+            resolve(token);
+          } else {
+            namida.logFailure('Ubii Node', 'subscribe failed (' + topic + ')\n' + reply);
+            reject(reply.error);
+          }
+        },
+        (error) => {
+          namida.logFailure('Ubii Node', error);
+          reject(error);
+        }
+      );
+    });
   }
 
   /**
@@ -269,6 +309,31 @@ class UbiiNode {
     }
 
     return true;
+  }
+
+  /**
+   * Publish some TopicData.
+   * @param {ubii.topicData.TopicData} topicData
+   */
+  publish(topicData) {
+    let buffer = this.translatorTopicData.createBufferFromPayload(topicData);
+
+    this.zmqDealer.send(buffer);
+    //TODO: as soon as master node has smart distinction of topic ownership for clients and will not send back
+    // topic data to clients that published it we can publish on local topic data here as well
+  }
+
+  /**
+   * Generate a timestamp for topic data.
+   */
+  generateTimestamp() {
+    let now = Date.now();
+    let seconds = Math.floor(now / 1000);
+    let nanos = (now - seconds * 1000) * 1000000;
+    return {
+      seconds: seconds,
+      nanos: nanos
+    };
   }
 }
 
