@@ -19,7 +19,7 @@
   "files": [],
   "dependencies": {
     "@tum-far/namida": "0.1.1",
-    "@tum-far/ubii-msg-formats": "0.15.3",
+    "@tum-far/ubii-msg-formats": "0.15.4",
     "@tum-far/ubii-topic-data": "0.3.7",
     "zeromq": "5.2.0"
   },

@@ -107,13 +107,18 @@ class UbiiNode {
   }
 
   _onTopicDataMessageReceived(messageBuffer) {
-    let topicdata = this.translatorTopicData.createMessageFromBuffer(messageBuffer);
+    try {
+      let topicdata = this.translatorTopicData.createMessageFromBuffer(messageBuffer);
+      if (!topicdata) {
+        namida.logFailure('Ubii node', 'could not parse topic data message from buffer');
+        return;
+      }
 
-    let records = topicdata.topicDataRecordList || [];
-    if (topicdata.topicDataRecord) records.push(topicdata.topicDataRecord);
+      let records = topicdata.topicDataRecordList ? topicdata.topicDataRecordList.elements : [];
+      if (topicdata.topicDataRecord) records.push(topicdata.topicDataRecord);
 
-    records.forEach((record) => {
-      /*if (record && record.topic) {
+      records.forEach((record) => {
+        /*if (record && record.topic) {
         let callbacks = this.topicDataCallbacks.get(record.topic);
         if (!callbacks) {
           this.topicDataRegexCallbacks.forEach((value) => {
@@ -128,8 +133,11 @@ class UbiiNode {
             cb(record[record.type], record.topic);
           });
       }*/
-      this.topicdata.publish(record.topic, record[record.type], record.type, record.timestamp);
-    });
+        this.topicdata.publish(record.topic, record[record.type], record.type, record.timestamp);
+      });
+    } catch (error) {
+      namida.logFailure('Ubii node', error);
+    }
   }
 
   callService(request) {
