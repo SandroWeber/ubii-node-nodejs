@@ -1,5 +1,5 @@
 const EventEmitter = require('events');
-const uuidv4 = require('uuid/v4');
+const { v4: uuidv4 } = require('uuid');
 const { proto } = require('@tum-far/ubii-msg-formats');
 const ProcessingModuleProto = proto.ubii.processing.ProcessingModule;
 const namida = require('@tum-far/namida');

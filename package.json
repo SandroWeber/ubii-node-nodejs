@@ -18,9 +18,13 @@
   },
   "files": [],
   "dependencies": {
+    "@tensorflow/tfjs-node": "2.4.0",
+    "@tensorflow-models/coco-ssd": "2.1.0",
     "@tum-far/namida": "0.1.1",
     "@tum-far/ubii-msg-formats": "0.15.4",
     "@tum-far/ubii-topic-data": "0.3.7",
+    "shelljs": "0.8.4",
+    "uuid": "8.3.2",
     "zeromq": "5.2.0"
   },
   "devDependencies": {},

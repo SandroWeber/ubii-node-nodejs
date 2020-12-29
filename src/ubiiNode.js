@@ -14,8 +14,6 @@ class UbiiNode {
     this.topicDataCallbacks = new Map();
     this.topicDataRegexCallbacks = new Map();
     this.topicdata = new RuntimeTopicData();
-
-    this.initialize();
   }
 
   async initialize() {
@@ -51,35 +49,10 @@ class UbiiNode {
 
     this.connectTopicdataSocket();
 
-    /* TESTING */
-    let testTopic = '/test/topic';
-    let token = await this.subscribeTopic(testTopic, (topic, msg) => {
-      console.info('custom sub callback - topic: ' + topic);
+    await this.subscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.NEW_SESSION, (msg) => {
+      console.info('\nINFO_TOPICS.NEW_SESSION');
+      console.info(msg);
     });
-    console.info('init() - sub token:');
-    console.info(token);
-
-    this.publish({
-      topicDataRecord: {
-        topic: testTopic,
-        timestamp: this.generateTimestamp(),
-        string: 'some test string'
-      }
-    });
-
-    setTimeout(() => {
-      this.publish({
-        topicDataRecordList: {
-          elements: [
-            {
-              topic: testTopic,
-              timestamp: this.generateTimestamp(),
-              string: 'some other string'
-            }
-          ]
-        }
-      });
-    }, 1000);
   }
 
   connectServiceSocket() {
@@ -178,7 +151,9 @@ class UbiiNode {
             } else {
               this.topicDataCallbacks.set(topic, [callback]);
             }*/
-            let token = this.topicdata.subscribe(topic, callback);
+            let token = this.topicdata.subscribe(topic, (topic, entry) => {
+              callback(entry.data, entry.type, entry.timestamp);
+            });
             resolve(token);
           } else {
             namida.logFailure('Ubii Node', 'subscribe failed (' + topic + ')\n' + reply);
