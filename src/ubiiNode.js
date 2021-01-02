@@ -5,15 +5,18 @@ const { RuntimeTopicData } = require('@tum-far/ubii-topic-data');
 const ZmqDealer = require('./networking/zmqDealer');
 const ZmqRequest = require('./networking/zmqRequest');
 
+const ProcessingModuleManager = require('./processing/processingModuleManager');
+
 class UbiiNode {
   constructor(name, masterNodeIP, masterNodeServicePort) {
     this.name = name;
     this.masterNodeIP = masterNodeIP;
     this.masterNodeServicePort = masterNodeServicePort;
 
-    this.topicDataCallbacks = new Map();
+    this.topicSubscriptions = new Map();
     this.topicDataRegexCallbacks = new Map();
     this.topicdata = new RuntimeTopicData();
+    this.processingModuleManager = new ProcessingModuleManager();
   }
 
   async initialize() {
@@ -49,8 +52,8 @@ class UbiiNode {
 
     this.connectTopicdataSocket();
 
-    await this.subscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.NEW_SESSION, (msg) => {
-      console.info('\nINFO_TOPICS.NEW_SESSION');
+    await this.subscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.START_SESSION, (msg) => {
+      console.info('\nINFO_TOPICS.START_SESSION');
       console.info(msg);
     });
   }
@@ -131,6 +134,8 @@ class UbiiNode {
    * Subscribe a callback to a given topic.
    * @param {string} topic
    * @param {function} callback
+   * 
+   * @returns {object} Subscription token, save to later unsubscribe
    */
   subscribeTopic(topic, callback) {
     return new Promise((resolve, reject) => {
@@ -145,15 +150,17 @@ class UbiiNode {
       this.callService(message).then(
         (reply) => {
           if (reply.success !== undefined && reply.success !== null) {
-            /*let callbacks = this.topicDataCallbacks.get(topic);
-            if (callbacks && callbacks.length > 0) {
-              callbacks.push(callback);
-            } else {
-              this.topicDataCallbacks.set(topic, [callback]);
-            }*/
             let token = this.topicdata.subscribe(topic, (topic, entry) => {
               callback(entry.data, entry.type, entry.timestamp);
             });
+
+            let callbacks = this.topicSubscriptions.get(topic);
+            if (callbacks && callbacks.length > 0) {
+              callbacks.push(callback);
+            } else {
+              this.topicSubscriptions.set(topic, [token]);
+            }
+
             resolve(token);
           } else {
             namida.logFailure('Ubii Node', 'subscribe failed (' + topic + ')\n' + reply);
@@ -170,22 +177,24 @@ class UbiiNode {
 
   /**
    * Unsubscribe a given callback from a given topic.
-   * @param {string} topic
-   * @param {function} callback
+   * @param {object} subscriptionToken - the token returned upon successful subscription
    */
-  async unsubscribeTopic(topic, callback = undefined) {
-    let currentCallbacks = this.topicDataCallbacks.get(topic);
-    if (currentCallbacks && currentCallbacks.length > 0) {
-      if (!callback) {
-        this.topicDataCallbacks.delete(topic);
+  async unsubscribeTopic(subscriptionToken) {
+    this.topicdata.unsubscribe(subscriptionToken);
+
+    let topic = subscriptionToken.topic;
+    let tokens = this.topicSubscriptions.get(topic);
+    if (tokens && tokens.length > 0) {
+      if (!subscriptionToken) {
+        this.topicSubscriptions.delete(topic);
       } else {
-        let index = currentCallbacks.indexOf(callback);
-        if (index !== -1) currentCallbacks.splice(index, 1);
+        let index = tokens.indexOf(subscriptionToken);
+        if (index !== -1) tokens.splice(index, 1);
       }
     }
 
-    if (currentCallbacks && currentCallbacks.length === 0) {
-      this.topicDataCallbacks.delete(topic);
+    if (tokens && tokens.length === 0) {
+      this.topicSubscriptions.delete(topic);
 
       let message = {
         topic: DEFAULT_TOPICS.SERVICES.TOPIC_SUBSCRIPTION,
@@ -194,8 +203,15 @@ class UbiiNode {
           unsubscribeTopics: [topic]
         }
       };
-      this.callService(message);
+      let response = await this.callService(message);
+      if (response.success) {
+        return true;
+      } else {
+        return false;
+      }
     }
+
+    return true;
   }
 
   /**

@@ -30,8 +30,8 @@ let testPublishSubscribe = async (ubiiNode) => {
   let token = await ubiiNode.subscribeTopic(topicTestPubSub, (msg) => {
     //console.info('\ncustom sub callback - topic: ' + msg);
   });
-  //console.info('\ninit() - sub token:');
-  //console.info(token);
+  console.info('\ninit() - sub token:');
+  console.info(token);
 
   ubiiNode.publish({
     topicDataRecord: {
@@ -53,6 +53,8 @@ let testPublishSubscribe = async (ubiiNode) => {
         ]
       }
     });
+
+    ubiiNode.unsubscribeTopic(token);
   }, 1000);
 };
 
@@ -86,6 +88,6 @@ let testSessionStartStop = async (ubiiNode, testSessionSpecs) => {
   testSessionSpecs.processingModules.push(testPMSpecs);
 
   /* TESTING */
-  //await testPublishSubscribe(ubiiNode);
+  await testPublishSubscribe(ubiiNode);
   await testSessionStartStop(ubiiNode, testSessionSpecs);
 })();

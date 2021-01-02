@@ -1,3 +1,5 @@
+const EventEmitter = require('events');
+
 const namida = require('@tum-far/namida/src/namida');
 const { RuntimeTopicData } = require('@tum-far/ubii-topic-data');
 const { proto } = require('@tum-far/ubii-msg-formats');
@@ -5,10 +7,13 @@ const ProcessingModuleProto = proto.ubii.processing.ProcessingModule;
 
 const Utils = require('../utilities');
 const { ProcessingModule } = require('./processingModule');
-const ProcessingModuleDatabase = require('../storage/processingModuleDatabase');
+const ProcessingModuleStorage = require('../storage/processingModuleStorage');
 
-class ProcessingModuleManager {
-  constructor(deviceManager, topicData = undefined) {
+class ProcessingModuleManager extends EventEmitter {
+  constructor(nodeID, deviceManager, topicData = undefined) {
+    super();
+
+    this.nodeID = nodeID;
     this.deviceManager = deviceManager;
     this.topicData = topicData;
 
@@ -28,16 +33,20 @@ class ProcessingModuleManager {
 
   createModule(specs) {
     let pm = undefined;
-    if (ProcessingModuleDatabase.hasEntry(specs.name)) {
-      pm = ProcessingModuleDatabase.createInstanceByName(specs.name);
+    if (ProcessingModuleStorage.hasEntry(specs.name)) {
+      pm = ProcessingModuleStorage.createInstanceByName(specs.name);
     } else {
       // create new module based on specs
       if (!specs.onProcessingStringified) {
-        namida.logFailure('ProcessingModuleManager', 'can\'t create PM "' + specs.name + '" based on specs, missing onProcessing definition.');
+        namida.logFailure(
+          'ProcessingModuleManager',
+          'can\'t create PM "' + specs.name + '" based on specs, missing onProcessing definition.'
+        );
         return undefined;
       }
       pm = new ProcessingModule(specs);
     }
+    pm.nodeId = this.nodeID;
 
     let success = this.addModule(pm);
     if (!success) {
@@ -129,8 +138,13 @@ class ProcessingModuleManager {
   /* I/O <-> topic mapping functions */
 
   applyIOMappings(ioMappings, sessionID) {
+    // filter out I/O mappings for PMs that run on this node
+    let applicableIOMappings = ioMappings.filter((ioMapping) =>
+      this.processingModules.has(ioMapping.processingModuleId)
+    );
+
     //TODO: refactor into something more readable
-    ioMappings.forEach((mapping) => {
+    applicableIOMappings.forEach((mapping) => {
       this.ioMappings.set(mapping.processingModuleId, mapping);
       let processingModule =
         this.getModuleByID(mapping.processingModuleId) ||
@@ -287,8 +301,8 @@ class ProcessingModuleManager {
 
   /* lockstep processing functions */
 
-  sendLockstepProcessingRequest(clientId, request) {
-    if (clientId === undefined || clientId === 'local') {
+  sendLockstepProcessingRequest(nodeId, request) {
+    if (nodeId === this.nodeID) {
       // server side PM
       return new Promise((resolve, reject) => {
         // assign input
@@ -350,5 +364,9 @@ class ProcessingModuleManager {
 
   /* lockstep processing functions end */
 }
+
+ProcessingModuleManager.EVENTS = Object.freeze({
+  PM_STARTED: 'PM_STARTED'
+});
 
 module.exports = ProcessingModuleManager;
