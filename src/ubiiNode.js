@@ -16,7 +16,10 @@ class UbiiNode {
     this.topicSubscriptions = new Map();
     this.topicDataRegexCallbacks = new Map();
     this.topicdata = new RuntimeTopicData();
-    this.processingModuleManager = new ProcessingModuleManager();
+  }
+
+  get id() {
+    return this.clientSpecification && this.clientSpecification.id;
   }
 
   async initialize() {
@@ -50,11 +53,34 @@ class UbiiNode {
     //console.info(this.serverSpecification);
     console.info(this.clientSpecification);
 
+    this.processingModuleManager = new ProcessingModuleManager(this.id, undefined, this.topicdata);
+
     this.connectTopicdataSocket();
 
-    await this.subscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.START_SESSION, (msg) => {
-      console.info('\nINFO_TOPICS.START_SESSION');
-      console.info(msg);
+    await this.subscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.START_SESSION, async (msgSession) => {
+      let localPMs = [];
+      msgSession.processingModules.forEach((pm) => {
+        if (pm.nodeId === this.id) {
+          let newModule = this.processingModuleManager.createModule(pm);
+          if (newModule) localPMs.push(newModule);
+        }
+      });
+
+      this.processingModuleManager.applyIOMappings(msgSession.ioMappings, msgSession.id);
+
+      localPMs.forEach((pm) => {
+        pm.start();
+      });
+
+      let pmRuntimeAddRequest = {
+        topic: DEFAULT_TOPICS.SERVICES.PM_RUNTIME_ADD,
+        processingModuleList: {
+          elements: localPMs.map((pm) => {
+            return pm.toProtobuf();
+          })
+        }
+      };
+      await this.callService(pmRuntimeAddRequest);
     });
   }
 
@@ -117,10 +143,10 @@ class UbiiNode {
   }
 
   callService(request) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
         let buffer = this.serviceRequestTranslator.createBufferFromPayload(request);
-        this.zmqRequest.sendRequest(buffer, (response) => {
+        await this.zmqRequest.sendRequest(buffer, (response) => {
           let reply = this.serviceReplyTranslator.createMessageFromBuffer(response);
           resolve(reply);
         });
@@ -134,7 +160,7 @@ class UbiiNode {
    * Subscribe a callback to a given topic.
    * @param {string} topic
    * @param {function} callback
-   * 
+   *
    * @returns {object} Subscription token, save to later unsubscribe
    */
   subscribeTopic(topic, callback) {

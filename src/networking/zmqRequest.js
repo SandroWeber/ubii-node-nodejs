@@ -32,7 +32,7 @@ class ZmqRequest {
         namida.logFailure('ZMQ request socket', 'no callback for response handling set!');
       } else {
         this.onResponse(response);
-        this.handlingRequest = false;
+        this.pendingRequest = false;
       }
     });
 
@@ -54,17 +54,15 @@ class ZmqRequest {
 
   sendRequest(request, onResponseCallback) {
     this.requestQueue.push({request, onResponseCallback});
-    
-    while (this.requestQueue.length > 0) {
-      this.handleRequest();
-    }
+
+    this.handleNextRequest();
   }
 
-  handleRequest() {
-    if (this.handlingRequest) {
+  handleNextRequest() {
+    if (this.pendingRequest) {
       return;
     }
-    this.handlingRequest = true;
+    this.pendingRequest = true;
 
     let next = this.requestQueue.splice(0,1)[0];
     this.onResponse = next.onResponseCallback;
