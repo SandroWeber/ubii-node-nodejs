@@ -45,6 +45,15 @@ class ZmqRequest {
         this.open = true;
       }
     });
+
+    // start request handling
+    let requestQueueWorker = () => {
+      if (this.requestQueue.length > 0) {
+        this.handleNextRequest();
+      }
+      setTimeout(requestQueueWorker, 1);
+    }
+    requestQueueWorker();
   }
 
   stop() {
