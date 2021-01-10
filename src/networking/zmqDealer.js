@@ -34,6 +34,16 @@ class ZmqDealer {
 
     // add callbacks
     this.socket.on('message', (envelope, payload) => {
+      try {
+        if (payload.toString() === 'PING') {
+          let bytes = Buffer.from('PONG');
+          this.send(bytes);
+          return;
+        }
+      } catch (error) {
+        console.info(error);
+      }
+
       if (!this.onMessage) {
         namida.logFailure('ZMQ router socket', 'no callback for message handling set!');
       } else {

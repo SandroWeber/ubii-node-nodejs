@@ -105,8 +105,8 @@ let testSessionStartStop = async (ubiiNode, testSessionSpecs) => {
   testSessionSpecs.processingModules.push(testPMSpecs);
 
   /* TESTING */
-  await testPublishSubscribe(ubiiNode);
-  await testSessionStartStop(ubiiNode, testSessionSpecs);
+  //await testPublishSubscribe(ubiiNode);
+  //await testSessionStartStop(ubiiNode, testSessionSpecs);
 
   let waitCycle = () => {
     setTimeout(waitCycle, 1000);

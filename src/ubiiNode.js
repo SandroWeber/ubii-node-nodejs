@@ -38,8 +38,8 @@ class UbiiNode {
       pull: (topic) => {
         return this.topicdata.pull(topic);
       },
-      subscribe: (topic, callback) => {
-        return this.topicdata.subscribe(topic, callback);
+      subscribe: async (topic, callback) => {
+        return await this.subscribeTopic(topic, callback);
       },
       unsubscribe: (token) => {
         this.topicdata.unsubscribe(token);
@@ -152,6 +152,7 @@ class UbiiNode {
 
   async _onStartSession(msgSession) {
     console.info('\n_onStartSession');
+    console.info(msgSession);
     let localPMs = [];
     msgSession.processingModules.forEach((pm) => {
       //console.info('pm specs');
@@ -173,25 +174,25 @@ class UbiiNode {
       }
     };
     let response = await this.callService(pmRuntimeAddRequest);
-    console.info(response);
 
     if (response.success) {
       this.processingModuleManager.applyIOMappings(msgSession.ioMappings, msgSession.id);
 
       localPMs.forEach((pm) => {
-        pm.start();
+        this.processingModuleManager.startModule(pm);
       });
     }
   }
 
   async _onStopSession(msgSession) {
-    //console.info('\n_onStopSession');
+    console.info('\n_onStopSession');
     //console.info(msgSession);
 
     this.processingModuleManager.processingModules.forEach((pm) => {
       //console.info(pm);
       if (pm.sessionId === msgSession.id) {
-        pm.stop();
+        this.processingModuleManager.stopModule(pm);
+        this.processingModuleManager.removeModule(pm);
       }
     });
   }
