@@ -93,7 +93,7 @@ let testSessionStartStop = async (ubiiNode, testSessionSpecs) => {
 };
 
 (async function () {
-  let ubiiNode = new UbiiNode('test-node-nodejs', '192.168.178.39', '8101');
+  let ubiiNode = new UbiiNode('test-node-nodejs', 'localhost', '8101');
   await ubiiNode.initialize();
 
   // test PM and session specifications

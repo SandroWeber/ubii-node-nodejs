@@ -1,5 +1,8 @@
 const zmq = require('zeromq');
 
+const MSG_PING = 'PING';
+const MSG_PONG = 'PONG';
+
 class ZmqDealer {
   /**
    * Communication endpoint implementing the zmq router pattern.
@@ -35,8 +38,8 @@ class ZmqDealer {
     // add callbacks
     this.socket.on('message', (envelope, payload) => {
       try {
-        if (payload.toString() === 'PING') {
-          let bytes = Buffer.from('PONG');
+        if (payload.toString() === MSG_PING) {
+          let bytes = Buffer.from(MSG_PONG);
           this.send(bytes);
           return;
         }
