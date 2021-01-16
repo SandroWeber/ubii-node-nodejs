@@ -44,20 +44,19 @@ class PMCoCoSSDObjectDetection extends ProcessingModule {
     prepareModel();
   }
 
+  async predict(image) {
+    let imgTensor = tf.tensor3d(image.data, [image.height, image.width, 3], 'int32');
+    let predictions = await this.state.model.detect(imgTensor); // line causes memory leaks
+    return [];//predictions;
+  }
+
   onProcessing() {
     let image = this.image;
     if (image && this.state.model) {
-      // prediction function
-      let predict = async () => {
-        let imgTensor = tf.tensor3d(image.data, [image.height, image.width, 3], 'int32');
-        let predictions = await this.state.model.detect(imgTensor);
-        return predictions;
-      };
-
       // make predictions
-      predict().then((predictions) => {
+      this.predict(image).then((predictions) => {
         // generate output list
-        let outputList = [];
+        /*let outputList = [];
         predictions.forEach((prediction) => {
           let pos = { x: prediction.bbox[0] / image.width, y: prediction.bbox[1] / image.height };
           outputList.push({
@@ -67,7 +66,7 @@ class PMCoCoSSDObjectDetection extends ProcessingModule {
           });
         });
         // write output
-        this.predictions = { elements: outputList };
+        this.predictions = { elements: outputList };*/
       });
     }
   }

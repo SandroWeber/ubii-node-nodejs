@@ -18,8 +18,8 @@
   },
   "files": [],
   "dependencies": {
-    "@tensorflow/tfjs-node": "2.4.0",
-    "@tensorflow-models/coco-ssd": "2.1.0",
+    "@tensorflow/tfjs-node": "2.8.4",
+    "@tensorflow-models/coco-ssd": "2.2.1",
     "@tum-far/namida": "0.1.1",
     "@tum-far/ubii-msg-formats": "0.15.6",
     "@tum-far/ubii-topic-data": "0.3.8",
