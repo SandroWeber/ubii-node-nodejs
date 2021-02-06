@@ -143,9 +143,10 @@ class ProcessingModuleManager extends EventEmitter {
     let pm = this.processingModules.get(pmSpec.id);
     pm && pm.stop();
     let subs = this.pmTopicSubscriptions.get(pmSpec.id);
-    subs && subs.forEach((token) => {
-      this.topicData.unsubscribe(token);
-    });
+    subs &&
+      subs.forEach((token) => {
+        this.topicData.unsubscribe(token);
+      });
   }
 
   startSessionModules(session) {
@@ -207,7 +208,11 @@ class ProcessingModuleManager extends EventEmitter {
             return;
           }
 
-          let topicSource = inputMapping[inputMapping.topicSource] || inputMapping.topicSource;
+          let topicSource =
+            inputMapping[inputMapping.topicSource] ||
+            inputMapping.topicSource ||
+            inputMapping.topic ||
+            inputMapping.topicMux;
           // single topic input
           if (typeof topicSource === 'string') {
             // decide if we pull from lockstep data or asynchronously
@@ -263,7 +268,11 @@ class ProcessingModuleManager extends EventEmitter {
             return;
           }
 
-          let topicDestination = outputMapping[outputMapping.topicDestination] || outputMapping.topicDestination;
+          let topicDestination =
+            outputMapping[outputMapping.topicDestination] ||
+            outputMapping.topicDestination ||
+            outputMapping.topic ||
+            outputMapping.topicDemux;
           // single topic output
           if (typeof topicDestination === 'string') {
             let messageFormat = processingModule.getIOMessageFormat(outputMapping.outputName);
