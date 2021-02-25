@@ -37,38 +37,38 @@ class PMCoCoSSDObjectDetection extends ProcessingModule {
     Object.assign(this, PMCoCoSSDObjectDetection.specs);
   }
 
-  onCreated() {
-    let prepareModel = async () => {
-      this.state.model = await cocoSsd.load();
-    };
-    prepareModel();
+  async onCreated() {
+    this.state.model = await cocoSsd.load();
+  }
+
+  async onProcessing() {
+    let image = this.image;
+    if (image && this.state.model) {
+      // make predictions
+      let tfPredictions = await this.predict(image);
+      // generate output list
+      let output = {
+        predictions: { elements: [] }
+      };
+      tfPredictions.forEach((prediction) => {
+        let pos = { x: prediction.bbox[0] / image.width, y: prediction.bbox[1] / image.height };
+        output.predictions.elements.push({
+          id: prediction.class,
+          pose: { position: pos },
+          size: { x: prediction.bbox[2] / image.width, y: prediction.bbox[3] / image.height }
+        });
+      });
+
+      // write output
+      this.predictions = output.predictions;
+      return output;
+    }
   }
 
   async predict(image) {
     let imgTensor = tf.tensor3d(image.data, [image.height, image.width, 3], 'int32');
     let predictions = await this.state.model.detect(imgTensor); // line causes memory leaks
     return predictions;
-  }
-
-  onProcessing() {
-    let image = this.image;
-    if (image && this.state.model) {
-      // make predictions
-      this.predict(image).then((predictions) => {
-        // generate output list
-        let outputList = [];
-        predictions.forEach((prediction) => {
-          let pos = { x: prediction.bbox[0] / image.width, y: prediction.bbox[1] / image.height };
-          outputList.push({
-            id: prediction.class,
-            pose: { position: pos },
-            size: { x: prediction.bbox[2] / image.width, y: prediction.bbox[3] / image.height }
-          });
-        });
-        // write output
-        this.predictions = { elements: outputList };
-      });
-    }
   }
 }
 

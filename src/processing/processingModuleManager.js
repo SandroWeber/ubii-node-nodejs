@@ -167,8 +167,8 @@ class ProcessingModuleManager extends EventEmitter {
 
   applyIOMappings(ioMappings, sessionID) {
     console.info('\napplyIOMappings');
-    console.info('\nioMappings');
-    console.info(ioMappings);
+    //console.info('\nioMappings');
+    //console.info(ioMappings);
     // filter out I/O mappings for PMs that run on this node
     let applicableIOMappings = ioMappings.filter((ioMapping) =>
       this.processingModules.has(ioMapping.processingModuleId)
@@ -199,7 +199,6 @@ class ProcessingModuleManager extends EventEmitter {
       // connect inputs
       mapping.inputMappings &&
         mapping.inputMappings.forEach((inputMapping) => {
-          console.info(inputMapping);
           if (!this.isValidIOMapping(processingModule, inputMapping)) {
             namida.logFailure(
               'ProcessingModuleManager',
@@ -259,7 +258,6 @@ class ProcessingModuleManager extends EventEmitter {
       // connect outputs
       mapping.outputMappings &&
         mapping.outputMappings.forEach((outputMapping) => {
-          console.info(outputMapping);
           if (!this.isValidIOMapping(processingModule, outputMapping)) {
             namida.logFailure(
               'ProcessingModuleManager',
