@@ -143,9 +143,10 @@ class ProcessingModuleManager extends EventEmitter {
     let pm = this.processingModules.get(pmSpec.id);
     pm && pm.stop();
     let subs = this.pmTopicSubscriptions.get(pmSpec.id);
-    subs && subs.forEach((token) => {
-      this.topicData.unsubscribe(token);
-    });
+    subs &&
+      subs.forEach((token) => {
+        this.topicData.unsubscribe(token);
+      });
   }
 
   startSessionModules(session) {
@@ -166,8 +167,8 @@ class ProcessingModuleManager extends EventEmitter {
 
   applyIOMappings(ioMappings, sessionID) {
     console.info('\napplyIOMappings');
-    console.info('\nioMappings');
-    console.info(ioMappings);
+    //console.info('\nioMappings');
+    //console.info(ioMappings);
     // filter out I/O mappings for PMs that run on this node
     let applicableIOMappings = ioMappings.filter((ioMapping) =>
       this.processingModules.has(ioMapping.processingModuleId)
@@ -198,7 +199,6 @@ class ProcessingModuleManager extends EventEmitter {
       // connect inputs
       mapping.inputMappings &&
         mapping.inputMappings.forEach((inputMapping) => {
-          console.info(inputMapping);
           if (!this.isValidIOMapping(processingModule, inputMapping)) {
             namida.logFailure(
               'ProcessingModuleManager',
@@ -207,7 +207,11 @@ class ProcessingModuleManager extends EventEmitter {
             return;
           }
 
-          let topicSource = inputMapping[inputMapping.topicSource] || inputMapping.topicSource;
+          let topicSource =
+            inputMapping[inputMapping.topicSource] ||
+            inputMapping.topicSource ||
+            inputMapping.topic ||
+            inputMapping.topicMux;
           // single topic input
           if (typeof topicSource === 'string') {
             // decide if we pull from lockstep data or asynchronously
@@ -254,7 +258,6 @@ class ProcessingModuleManager extends EventEmitter {
       // connect outputs
       mapping.outputMappings &&
         mapping.outputMappings.forEach((outputMapping) => {
-          console.info(outputMapping);
           if (!this.isValidIOMapping(processingModule, outputMapping)) {
             namida.logFailure(
               'ProcessingModuleManager',
@@ -263,7 +266,11 @@ class ProcessingModuleManager extends EventEmitter {
             return;
           }
 
-          let topicDestination = outputMapping[outputMapping.topicDestination] || outputMapping.topicDestination;
+          let topicDestination =
+            outputMapping[outputMapping.topicDestination] ||
+            outputMapping.topicDestination ||
+            outputMapping.topic ||
+            outputMapping.topicDemux;
           // single topic output
           if (typeof topicDestination === 'string') {
             let messageFormat = processingModule.getIOMessageFormat(outputMapping.outputName);
