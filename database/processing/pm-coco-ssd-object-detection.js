@@ -37,11 +37,8 @@ class PMCoCoSSDObjectDetection extends ProcessingModule {
     Object.assign(this, PMCoCoSSDObjectDetection.specs);
   }
 
-  onCreated() {
-    let prepareModel = async () => {
-      this.state.model = await cocoSsd.load();
-    };
-    prepareModel();
+  async onCreated() {
+    this.state.model = await cocoSsd.load();
   }
 
   async predict(image) {
