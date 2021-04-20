@@ -177,6 +177,7 @@ class ProcessingModuleManager extends EventEmitter {
     //TODO: refactor into something more readable
     console.info('\napplicableIOMappings');
     console.info(applicableIOMappings);
+    
     applicableIOMappings.forEach((mapping) => {
       this.ioMappings.set(mapping.processingModuleId, mapping);
       let processingModule =

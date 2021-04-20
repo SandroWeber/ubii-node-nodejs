@@ -41,7 +41,7 @@ class PMCoCoSSDObjectDetection extends ProcessingModule {
     this.state.model = await cocoSsd.load();
   }
 
-  async onProcessing() {
+  async onProcessing(deltaTime, inputs, outputs, state) {
     let image = this.image;
     if (image && this.state.model) {
       // make predictions
