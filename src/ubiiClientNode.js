@@ -8,7 +8,7 @@ const ZmqRequest = require('./networking/zmqRequest');
 const ProcessingModuleManager = require('./processing/processingModuleManager');
 const ProcessingModuleStorage = require('./storage/processingModuleStorage');
 
-class UbiiNode {
+class UbiiClientNode {
   constructor(name, masterNodeIP, masterNodeServicePort) {
     this.name = name;
     this.masterNodeIP = masterNodeIP;
@@ -428,27 +428,6 @@ class UbiiNode {
   }
 
   /**
-   * This temporarily replaces the original RuntimeTopicData.publish method to prevent direct use of the local
-   * TopicData buffer. Direct publishing requires smart assessment of local data vs. remote data in order to
-   * prevent double data writing and infinite chains for topics published and subscribed at the same time.
-   * @param {string} topic
-   * @param {*} value
-   * @param {*} type
-   */
-  /*publishTopicdataReplacement(topic, value, type, timestamp) {
-    console.info('publishTopicdataReplacement');
-    console.info(topic);
-    let msg = {
-      topicDataRecord: {
-        topic: topic,
-        timestamp: timestamp
-      }
-    };
-    msg.topicDataRecord[type] = value;
-    this.publish(msg);
-  }*/
-
-  /**
    * Generate a timestamp for topic data.
    */
   generateTimestamp() {
@@ -462,4 +441,4 @@ class UbiiNode {
   }
 }
 
-module.exports = UbiiNode;
+module.exports = UbiiClientNode;

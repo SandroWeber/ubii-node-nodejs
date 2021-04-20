@@ -14,7 +14,7 @@
     }
   ],
   "scripts": {
-    "start": "node scripts/startNode.js"
+    "start": "node scripts/startClientNode.js"
   },
   "files": [],
   "dependencies": {
