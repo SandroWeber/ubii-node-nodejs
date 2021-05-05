@@ -2,11 +2,12 @@ const namida = require('@tum-far/namida/src/namida');
 const { ProtobufTranslator, MSG_TYPES, DEFAULT_TOPICS } = require('@tum-far/ubii-msg-formats');
 const { RuntimeTopicData } = require('@tum-far/ubii-topic-data');
 
-const ZmqDealer = require('./networking/zmqDealer');
-const ZmqRequest = require('./networking/zmqRequest');
+const ZmqDealer = require('../networking/zmqDealer');
+const ZmqRequest = require('../networking/zmqRequest');
 
-const ProcessingModuleManager = require('./processing/processingModuleManager');
-const ProcessingModuleStorage = require('./storage/processingModuleStorage');
+const ProcessingModuleManager = require('../processing/processingModuleManager');
+const ProcessingModuleStorage = require('../storage/processingModuleStorage');
+const Utils = require('../utilities');
 
 class UbiiClientNode {
   constructor(name, masterNodeIP, masterNodeServicePort) {

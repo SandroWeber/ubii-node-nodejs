@@ -5,6 +5,8 @@ const { RuntimeTopicData } = require('@tum-far/ubii-topic-data');
 const { proto } = require('@tum-far/ubii-msg-formats');
 const ProcessingModuleProto = proto.ubii.processing.ProcessingModule;
 
+const workerpool = require('workerpool');
+
 const Utils = require('../utilities');
 const { ProcessingModule } = require('./processingModule');
 const ProcessingModuleStorage = require('../storage/processingModuleStorage');
@@ -29,9 +31,18 @@ class ProcessingModuleManager extends EventEmitter {
     this.lockstepOutputTopicdata = {
       records: []
     };*/
+
+    this.workerPool = workerpool.pool();
   }
 
   createModule(specs) {
+    if (specs.id && this.processingModules.has(specs.id)) {
+      namida.logFailure(
+        'ProcessingModuleManager',
+        "can't create module " + specs.name + ', ID already exists: ' + specs.id
+      );
+    }
+
     let pm = undefined;
     if (ProcessingModuleStorage.hasEntry(specs.name)) {
       pm = ProcessingModuleStorage.createInstance(specs);
@@ -55,8 +66,21 @@ class ProcessingModuleManager extends EventEmitter {
     if (!success) {
       return undefined;
     } else {
-      pm && pm.onCreated(pm.state);
+      pm.initialized = this.initializeModule(pm);
       return pm;
+    }
+  }
+
+  async initializeModule(pm) {
+    try {
+      pm.onCreated && await pm.onCreated(pm.state);
+      await pm.setWorkerPool(this.workerPool);
+
+      return true;
+    }
+    catch (error) {
+      namida.logFailure(this.toString(), 'PM initialization error:\n' + error);
+      return false;
     }
   }
 
@@ -156,7 +180,7 @@ class ProcessingModuleManager extends EventEmitter {
       }
     });
   }
-
+  
   stopSessionModules(session) {
     this.processingModuleManager.processingModules.forEach((pm) => {
       if (pm.sessionId === session.id) {
@@ -165,10 +189,9 @@ class ProcessingModuleManager extends EventEmitter {
     });
   }
 
+  /* I/O <-> topic mapping functions */
+
   applyIOMappings(ioMappings, sessionID) {
-    console.info('\napplyIOMappings');
-    //console.info('\nioMappings');
-    //console.info(ioMappings);
     // filter out I/O mappings for PMs that run on this node
     let applicableIOMappings = ioMappings.filter((ioMapping) =>
       this.processingModules.has(ioMapping.processingModuleId)
@@ -177,11 +200,11 @@ class ProcessingModuleManager extends EventEmitter {
     //TODO: refactor into something more readable
     console.info('\napplicableIOMappings');
     console.info(applicableIOMappings);
-    
+
     applicableIOMappings.forEach((mapping) => {
       this.ioMappings.set(mapping.processingModuleId, mapping);
       let processingModule =
-        this.getModuleByID(mapping.processingModuleId) || this.getModuleByName(mapping.processingModuleName, sessionID);
+      this.getModuleByID(mapping.processingModuleId) || this.getModuleByName(mapping.processingModuleName, sessionID);
       if (!processingModule) {
         namida.logFailure(
           'ProcessingModuleManager',
