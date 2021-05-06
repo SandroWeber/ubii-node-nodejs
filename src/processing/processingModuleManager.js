@@ -44,8 +44,8 @@ class ProcessingModuleManager extends EventEmitter {
     }
 
     let pm = undefined;
-    if (ProcessingModuleStorage.hasEntry(specs.name)) {
-      pm = ProcessingModuleStorage.createInstance(specs);
+    if (ProcessingModuleStorage.instance.hasEntry(specs.name)) {
+      pm = ProcessingModuleStorage.instance.createInstance(specs);
       //TODO: make ID and sessionID / whole specs part of the instace creation call parameters for storage
       //if (specs.id) pm.id = specs.id;
       //if (specs.sessionId) pm.sessionId = specs.sessionId;

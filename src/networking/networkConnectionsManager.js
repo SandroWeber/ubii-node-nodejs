@@ -6,7 +6,7 @@ const ZmqRouter = require('./zmqRouter');
 const WebsocketServer = require('./websocketServer');
 const RESTServer = require('./restServer');
 
-const configService = require('../config/configService');
+const ConfigService = require('../config/configService');
 const namida = require('@tum-far/namida/src/namida');
 
 class NetworkConnectionsManager {
@@ -24,20 +24,20 @@ class NetworkConnectionsManager {
     this.connections = {};
 
     // ZMQ Service Component:
-    this.connections.serviceZMQ = new ZmqReply('tcp', '*:' + configService.getPortServiceZMQ());
+    this.connections.serviceZMQ = new ZmqReply('tcp', '*:' + ConfigService.instance.getPortServiceZMQ());
 
     // REST Service Component:
-    this.connections.serviceREST = new RESTServer(configService.getPortServiceREST());
+    this.connections.serviceREST = new RESTServer(ConfigService.instance.getPortServiceREST());
 
     // ZMQ Topic Data Component:
     this.connections.topicDataZMQ = new ZmqRouter(
       'ZMQ-TCP-Topicdata',
       'tcp',
-      '*:' + configService.getPortTopicdataZMQ()
+      '*:' + ConfigService.instance.getPortTopicdataZMQ()
     );
 
     // Websocket Topic Data Component:
-    this.connections.topicDataWS = new WebsocketServer(configService.getPortTopicdataWS());
+    this.connections.topicDataWS = new WebsocketServer(ConfigService.instance.getPortTopicdataWS());
 
     // Inter-Process Communication Topic Data Component:
     let ipcSocketSupported = process.platform !== 'win32';
@@ -46,7 +46,7 @@ class NetworkConnectionsManager {
       this.connections.topicDataIPC = new ZmqRouter(
         'ZMQ-IPC-Topicdata',
         'ipc',
-        pwd + configService.config.ipc.ipcEndpointTopicData
+        pwd + ConfigService.instance.config.ipc.ipcEndpointTopicData
       );
     }
 
@@ -108,7 +108,7 @@ class NetworkConnectionsManager {
   }
 
   logConnectionStatus() {
-    let httpsEnabled = configService.useHTTPS() ? 'enabled' : 'disabled';
+    let httpsEnabled = ConfigService.instance.useHTTPS() ? 'enabled' : 'disabled';
     let readyStatus = this.ready ? 'ready' : 'failed';
     let message = 'status=' + readyStatus + ' | HTTPS=' + httpsEnabled + ' | connections:';
 
@@ -130,6 +130,4 @@ class NetworkConnectionsManager {
   }
 }
 
-module.exports = {
-  NetworkConnectionsManager: NetworkConnectionsManager
-};
+module.exports = NetworkConnectionsManager;

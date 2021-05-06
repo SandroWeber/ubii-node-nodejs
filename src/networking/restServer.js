@@ -6,7 +6,7 @@ const fs = require('fs');
 
 const NetworkConfigManager = require('./networkConfigManager');
 
-const configService = require('../config/configService');
+const ConfigService = require('../config/configService');
 
 class RESTServer {
   /**
@@ -21,7 +21,7 @@ class RESTServer {
     let ipLan = NetworkConfigManager.hostAdresses.ethernet;
     let ipWifi = NetworkConfigManager.hostAdresses.wifi;
 
-    this.allowedOrigins = configService.getAllowedOrigins();
+    this.allowedOrigins = ConfigService.instance.getAllowedOrigins();
     this.allowedOrigins = this.allowedOrigins.concat([
       'http://' + ipLan + ':8080',
       'http://' + ipLan + ':8081',
@@ -42,11 +42,11 @@ class RESTServer {
     // init
     this.app = express();
 
-    if (configService.useHTTPS()) {
+    if (ConfigService.instance.useHTTPS()) {
       var credentials = {
         //ca: [fs.readFileSync(PATH_TO_BUNDLE_CERT_1), fs.readFileSync(PATH_TO_BUNDLE_CERT_2)],
-        cert: fs.readFileSync(configService.getPathCertificate()),
-        key: fs.readFileSync(configService.getPathPrivateKey())
+        cert: fs.readFileSync(ConfigService.instance.getPathCertificate()),
+        key: fs.readFileSync(ConfigService.instance.getPathPrivateKey())
       };
       this.server = https.createServer(credentials, this.app);
       this.endpoint = 'https://*:' + this.port;

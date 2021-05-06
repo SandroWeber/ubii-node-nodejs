@@ -72,7 +72,7 @@ class UbiiClientNode {
       client: {
         name: this.name,
         isDedicatedProcessingNode: true,
-        processingModules: ProcessingModuleStorage.getAllSpecs()
+        processingModules: ProcessingModuleStorage.instance.getAllSpecs()
       }
     });
     if (replyClientRegistration.client) {

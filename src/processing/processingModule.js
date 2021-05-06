@@ -59,7 +59,7 @@ class ProcessingModule extends EventEmitter {
     Object.defineProperty(this.state, 'modules', {
       // modules are read-only
       get: () => {
-        return ExternalLibrariesService.getExternalLibraries();
+        return ExternalLibrariesService.instance.getExternalLibraries();
       },
       configurable: true
     });

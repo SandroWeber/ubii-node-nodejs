@@ -1,4 +1,4 @@
-const UbiiClientNode = require('../src/nodes/ubiiClientNode');
+const { UbiiClientNode } = require('../src/index');
 
 (async function () {
   let ubiiNode = new UbiiClientNode('test-node-nodejs', 'localhost', '8101');

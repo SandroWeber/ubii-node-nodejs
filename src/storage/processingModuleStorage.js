@@ -81,11 +81,25 @@ class PMFileHandlerJS extends FileHandler {
   }
 }
 
+let _instance = null;
+const SINGLETON_ENFORCER = Symbol();
+
 class ProcessingModuleStorage extends Storage {
-  constructor() {
+  constructor(enforcer) {
+    if (enforcer !== SINGLETON_ENFORCER) {
+      throw new Error('Use ' + this.constructor.name + '.instance');
+    }
     let fileHandlerProto = new PMFileHandlerProtobuf();
     let fileHandlerJs = new PMFileHandlerJS();
     super('processing', [fileHandlerProto, fileHandlerJs]);
+  }
+
+  static get instance() {
+    if (_instance == null) {
+      _instance = new ProcessingModuleStorage(SINGLETON_ENFORCER);
+    }
+
+    return _instance;
   }
 
   /**
@@ -144,4 +158,4 @@ class ProcessingModuleStorage extends Storage {
   }
 }
 
-module.exports = new ProcessingModuleStorage();
+module.exports = ProcessingModuleStorage;

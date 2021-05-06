@@ -42,4 +42,4 @@ class RESTClient {
   }
 }
 
-export default RESTClient;
+module.exports = RESTClient;

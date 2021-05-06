@@ -1,6 +1,20 @@
+let _instance = null;
+const SINGLETON_ENFORCER = Symbol();
+
 class ExternalLibrariesService {
-  constructor() {
+  constructor(enforcer) {
+    if (enforcer !== SINGLETON_ENFORCER) {
+      throw new Error('Use ' + this.constructor.name + '.instance');
+    }
     this.libraries = {};
+  }
+
+  static get instance() {
+    if (_instance == null) {
+      _instance = new ExternalLibrariesService(SINGLETON_ENFORCER);
+    }
+
+    return _instance;
   }
 
   addExternalLibrary(name, library) {
@@ -19,4 +33,4 @@ class ExternalLibrariesService {
   }
 }
 
-module.exports = new ExternalLibrariesService();
+module.exports = ExternalLibrariesService;
