@@ -16,13 +16,13 @@
   "scripts": {
     "start": "node scripts/startClientNode.js"
   },
-  "files": [],
+  "files": [
+    "src/"
+  ],
   "dependencies": {
-    "@tensorflow/tfjs-node": "2.8.4",
-    "@tensorflow-models/coco-ssd": "2.2.1",
     "@tum-far/namida": "0.1.1",
     "@tum-far/ubii-msg-formats": "0.15.12",
-    "@tum-far/ubii-topic-data": "0.3.8",
+    "@tum-far/ubii-topic-data": "0.3.9",
     "express": "4.17.1",
     "shelljs": "0.8.4",
     "uuid": "8.3.2",
@@ -30,7 +30,10 @@
     "ws": "7.4.5",
     "zeromq": "5.2.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "@tensorflow/tfjs-node": "2.8.4",
+    "@tensorflow-models/coco-ssd": "2.2.1"
+  },
   "eslintConfig": {
     "root": true,
     "env": {

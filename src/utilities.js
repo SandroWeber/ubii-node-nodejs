@@ -27,7 +27,7 @@ class Utils {
   }
 
   static isNodeJS() {
-    return typeof process !== 'undefined'&& process.versions != null && process.versions.node != null;
+    return typeof process !== 'undefined' && process.versions != null && process.versions.node != null;
   }
 }
 

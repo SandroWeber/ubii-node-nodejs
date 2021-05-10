@@ -15,6 +15,8 @@ const ProcessingModuleManager = require('./processing/processingModuleManager');
 
 const ProcessingModuleStorage = require('./storage/processingModuleStorage');
 
+const Utils = require('./utilities');
+
 module.exports = {
   UbiiClientNode,
   NetworkConnectionsManager,
@@ -28,5 +30,6 @@ module.exports = {
   ExternalLibrariesService,
   ProcessingModule,
   ProcessingModuleManager,
-  ProcessingModuleStorage
+  ProcessingModuleStorage,
+  Utils
 };
