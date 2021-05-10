@@ -1,7 +1,6 @@
 
 const uuidv4Regex = '[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{12}';
 
-
 class Utils {
   static createFunctionFromString(string) {
     if (!string || string.length === 0) {
@@ -21,6 +20,14 @@ class Utils {
 
   static getUUIDv4Regex() {
     return uuidv4Regex;
+  }
+
+  static isBrowser() {
+    return typeof window !== 'undefined' && typeof window.document !== 'undefined';
+  }
+
+  static isNodeJS() {
+    return typeof process !== 'undefined' && process.versions != null && process.versions.node != null;
   }
 }
 

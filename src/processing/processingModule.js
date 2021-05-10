@@ -5,9 +5,7 @@ const ProcessingModuleProto = proto.ubii.processing.ProcessingModule;
 const namida = require('@tum-far/namida');
 
 const ExternalLibrariesService = require('./externalLibrariesService');
-
 const Utils = require('../utilities');
-const { set } = require('shelljs');
 
 class ProcessingModule extends EventEmitter {
   constructor(specs = {}) {
@@ -17,6 +15,8 @@ class ProcessingModule extends EventEmitter {
     specs && Object.assign(this, JSON.parse(JSON.stringify(specs)));
     // new instance is getting new ID
     this.id = this.id || uuidv4();
+    this.inputs = this.inputs || [];
+    this.outputs = this.outputs || [];
     // check that language specification for module is correct
     if (this.language === undefined) this.language = ProcessingModuleProto.Language.JS;
     if (this.language !== ProcessingModuleProto.Language.JS) {
@@ -57,7 +57,7 @@ class ProcessingModule extends EventEmitter {
     Object.defineProperty(this.state, 'modules', {
       // modules are read-only
       get: () => {
-        return ExternalLibrariesService.getExternalLibraries();
+        return ExternalLibrariesService.instance.getExternalLibraries();
       },
       configurable: true
     });
@@ -68,6 +68,8 @@ class ProcessingModule extends EventEmitter {
   /* execution control */
 
   start() {
+    this.openWorkerpoolExecutions = [];
+
     if (this.processingMode && this.processingMode.frequency) {
       this.startProcessingByFrequency();
     } else if (this.processingMode && this.processingMode.triggerOnInput) {
@@ -79,8 +81,15 @@ class ProcessingModule extends EventEmitter {
     }
 
     if (this.status === ProcessingModuleProto.Status.PROCESSING) {
-      namida.logSuccess(this.toString(), 'started');
+      let message = 'started';
+      if (this.workerPool) {
+        message += ' (using workerpool)';
+      }
+      namida.logSuccess(this.toString(), message);
+      return true;
     }
+
+    return false;
   }
 
   stop() {
@@ -95,6 +104,11 @@ class ProcessingModule extends EventEmitter {
     this.onProcessingLockstepPass = () => {
       return undefined;
     };
+
+    this.openWorkerpoolExecutions.forEach((exec) => {
+      exec.cancel();
+    });
+
     namida.logSuccess(this.toString(), 'stopped');
   }
 
@@ -103,13 +117,16 @@ class ProcessingModule extends EventEmitter {
 
     let tLastProcess = Date.now();
     let msFrequency = 1000 / this.processingMode.frequency.hertz;
+
     let processIteration = () => {
       // timing
       let tNow = Date.now();
       let deltaTime = tNow - tLastProcess;
       tLastProcess = tNow;
+
       // processing
       this.onProcessing(deltaTime, this.ioProxy, this.ioProxy, this.state);
+
       if (this.status === ProcessingModuleProto.Status.PROCESSING) {
         setTimeout(() => {
           processIteration();
@@ -175,27 +192,52 @@ class ProcessingModule extends EventEmitter {
     };
   }
 
-  /**
-   * LEGACY PROCESSING MODE - should not be used as it quickly hogs all ressources
-   */
-  startProcessingByCycles() {
-    this.status = ProcessingModuleProto.Status.PROCESSING;
+  async setWorkerPool(workerPool) {
+    let viable = await this.isWorkerpoolViable(workerPool);
 
-    let tLastProcess = Date.now();
-    let processIteration = () => {
-      // timing
-      let tNow = Date.now();
-      let deltaTime = tNow - tLastProcess;
-      tLastProcess = tNow;
-      // processing
-      this.onProcessing(deltaTime, this.ioProxy, this.ioProxy, this.state);
-      if (this.status === ProcessingModuleProto.Status.PROCESSING) {
-        setImmediate(() => {
-          processIteration();
-        });
+    if (viable) {
+      this.workerPool = workerPool;
+
+      // redefine onProcessing to be executed via workerpool
+      this.originalOnProcessing = this.onProcessing;
+      let workerpoolOnProcessing = (deltaTime, inputs, outputs, state) => {
+        let wpExecPromise = this.workerPool
+          .exec(this.originalOnProcessing, [deltaTime, inputs, {}, state])
+          .then((result) => {
+            this.outputs.forEach((output) => {
+              if (result && result.hasOwnProperty(output.internalName)) {
+                this.ioProxy[output.internalName] = result[output.internalName];
+              }
+            });
+            this.openWorkerpoolExecutions.splice(
+              this.openWorkerpoolExecutions.indexOf(wpExecPromise),
+              1
+            );
+          })
+          .catch((error) => {
+            if (!error.message || error.message !== 'promise cancelled') {
+              // executuion was not just cancelled via workerpool API
+              namida.logFailure(this.toString(), 'workerpool execution failed:\n' + error);
+            }
+          });
+        this.openWorkerpoolExecutions.push(wpExecPromise);
       }
-    };
-    processIteration();
+      this.onProcessing = workerpoolOnProcessing;
+    } else {
+      namida.warn(
+        this.toString(),
+        'not viable to be executed via workerpool, might slow down system significantly'
+      );
+    }
+  }
+
+  async isWorkerpoolViable(workerPool) {
+    try {
+      await workerPool.exec(this.onProcessing, [1, this.ioProxy, {}, this.state]);
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   /* execution control end */
@@ -399,4 +441,4 @@ ProcessingModule.EVENTS = Object.freeze({
   PROCESSED: 3
 });
 
-module.exports = { ProcessingModule: ProcessingModule };
+module.exports = { ProcessingModule };

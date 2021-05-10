@@ -2,13 +2,14 @@ const namida = require('@tum-far/namida/src/namida');
 const { ProtobufTranslator, MSG_TYPES, DEFAULT_TOPICS } = require('@tum-far/ubii-msg-formats');
 const { RuntimeTopicData } = require('@tum-far/ubii-topic-data');
 
-const ZmqDealer = require('./networking/zmqDealer');
-const ZmqRequest = require('./networking/zmqRequest');
+const ZmqDealer = require('../networking/zmqDealer');
+const ZmqRequest = require('../networking/zmqRequest');
 
-const ProcessingModuleManager = require('./processing/processingModuleManager');
-const ProcessingModuleStorage = require('./storage/processingModuleStorage');
+const ProcessingModuleManager = require('../processing/processingModuleManager');
+const ProcessingModuleStorage = require('../storage/processingModuleStorage');
+const Utils = require('../utilities');
 
-class UbiiNode {
+class UbiiClientNode {
   constructor(name, masterNodeIP, masterNodeServicePort) {
     this.name = name;
     this.masterNodeIP = masterNodeIP;
@@ -71,7 +72,7 @@ class UbiiNode {
       client: {
         name: this.name,
         isDedicatedProcessingNode: true,
-        processingModules: ProcessingModuleStorage.getAllSpecs()
+        processingModules: ProcessingModuleStorage.instance.getAllSpecs()
       }
     });
     if (replyClientRegistration.client) {
@@ -428,27 +429,6 @@ class UbiiNode {
   }
 
   /**
-   * This temporarily replaces the original RuntimeTopicData.publish method to prevent direct use of the local
-   * TopicData buffer. Direct publishing requires smart assessment of local data vs. remote data in order to
-   * prevent double data writing and infinite chains for topics published and subscribed at the same time.
-   * @param {string} topic
-   * @param {*} value
-   * @param {*} type
-   */
-  /*publishTopicdataReplacement(topic, value, type, timestamp) {
-    console.info('publishTopicdataReplacement');
-    console.info(topic);
-    let msg = {
-      topicDataRecord: {
-        topic: topic,
-        timestamp: timestamp
-      }
-    };
-    msg.topicDataRecord[type] = value;
-    this.publish(msg);
-  }*/
-
-  /**
    * Generate a timestamp for topic data.
    */
   generateTimestamp() {
@@ -462,4 +442,4 @@ class UbiiNode {
   }
 }
 
-module.exports = UbiiNode;
+module.exports = UbiiClientNode;
