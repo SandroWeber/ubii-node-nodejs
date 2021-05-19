@@ -3,7 +3,7 @@ var https = require('https');
 const fs = require('fs');
 const url = require('url');
 
-const configService = require('../config/configService');
+const ConfigService = require('../config/configService');
 const { PING_MESSAGE, PONG_MESSAGE } = require('./constants');
 
 class WebsocketServer {
@@ -32,11 +32,11 @@ class WebsocketServer {
    * Start the websocket server.
    */
   start() {
-    if (configService.useHTTPS()) {
+    if (ConfigService.instance.useHTTPS()) {
       var credentials = {
         //ca: [fs.readFileSync(PATH_TO_BUNDLE_CERT_1), fs.readFileSync(PATH_TO_BUNDLE_CERT_2)],
-        cert: fs.readFileSync(configService.getPathCertificate()),
-        key: fs.readFileSync(configService.getPathPrivateKey())
+        cert: fs.readFileSync(ConfigService.instance.getPathCertificate()),
+        key: fs.readFileSync(ConfigService.instance.getPathPrivateKey())
       };
       this.server = https.createServer(credentials);
       this.server.listen(this.port);
