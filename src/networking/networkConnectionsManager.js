@@ -1,4 +1,5 @@
 const { ProtobufTranslator, MSG_TYPES } = require('@tum-far/ubii-msg-formats');
+const namida = require('@tum-far/namida/src/namida');
 
 const ZmqReply = require('./zmqReply');
 const ZmqRouter = require('./zmqRouter');
@@ -7,7 +8,6 @@ const WebsocketServer = require('./websocketServer');
 const RESTServer = require('./restServer');
 
 const ConfigService = require('../config/configService');
-const namida = require('@tum-far/namida/src/namida');
 
 class NetworkConnectionsManager {
   constructor() {

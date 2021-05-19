@@ -3,7 +3,7 @@ const os = require('os');
 let _instance = null;
 const SINGLETON_ENFORCER = Symbol();
 
-class NetworkConfigManager {
+class NetworkConfigService {
   constructor(enforcer) {
     if (enforcer !== SINGLETON_ENFORCER) {
       throw new Error('Use ' + this.constructor.name + '.instance');
@@ -45,4 +45,4 @@ class NetworkConfigManager {
   }
 }
 
-module.exports = NetworkConfigManager;
+module.exports = NetworkConfigService;
