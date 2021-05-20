@@ -1,11 +1,10 @@
 const EventEmitter = require('events');
+const workerpool = require('workerpool');
 
 const namida = require('@tum-far/namida/src/namida');
 const { RuntimeTopicData } = require('@tum-far/ubii-topic-data');
 const { proto } = require('@tum-far/ubii-msg-formats');
 const ProcessingModuleProto = proto.ubii.processing.ProcessingModule;
-
-const workerpool = require('workerpool');
 
 const Utils = require('../utilities');
 const { ProcessingModule } = require('./processingModule');

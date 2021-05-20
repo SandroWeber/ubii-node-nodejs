@@ -7,7 +7,6 @@ const ZmqRequest = require('../networking/zmqRequest');
 
 const ProcessingModuleManager = require('../processing/processingModuleManager');
 const ProcessingModuleStorage = require('../storage/processingModuleStorage');
-const Utils = require('../utilities');
 
 class UbiiClientNode {
   constructor(name, masterNodeIP, masterNodeServicePort) {

@@ -23,7 +23,6 @@ class NetworkConnectionsManager {
     this.topicDataTranslator = new ProtobufTranslator(MSG_TYPES.TOPIC_DATA);
 
     this.ready = false;
-    this.openConnections();
   }
 
   static get instance() {
