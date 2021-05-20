@@ -4,7 +4,7 @@ const https = require('https');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 
-const NetworkConfigService = require('./networkConfigService');
+const NetworkConfigManager = require('./networkConfigManager');
 
 const ConfigService = require('../config/configService');
 
@@ -18,8 +18,8 @@ class RESTServer {
   constructor(port = 5555, autoBind = true) {
     this.port = port;
 
-    let ipLan = NetworkConfigService.instance.hostAdresses.ethernet;
-    let ipWifi = NetworkConfigService.instance.hostAdresses.wifi;
+    let ipLan = NetworkConfigManager.instance.hostAdresses.ethernet;
+    let ipWifi = NetworkConfigManager.instance.hostAdresses.wifi;
 
     this.allowedOrigins = ConfigService.instance.getAllowedOrigins();
     this.allowedOrigins = this.allowedOrigins.concat([
