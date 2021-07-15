@@ -7,7 +7,6 @@ const ZmqRequest = require('../networking/zmqRequest');
 
 const ProcessingModuleManager = require('../processing/processingModuleManager');
 const ProcessingModuleStorage = require('../storage/processingModuleStorage');
-const Utils = require('../utilities');
 
 class UbiiClientNode {
   constructor(name, masterNodeIP, masterNodeServicePort) {
@@ -15,7 +14,7 @@ class UbiiClientNode {
     this.masterNodeIP = masterNodeIP;
     this.masterNodeServicePort = masterNodeServicePort;
 
-    this.topicSubscriptions = new Map();
+    //this.topicSubscriptions = new Map();
     this.topicDataRegexCallbacks = new Map();
 
     this.topicdata = new RuntimeTopicData();
@@ -26,14 +25,10 @@ class UbiiClientNode {
     this.topicdata.publish = this.publishTopicdataReplacement;*/
 
     this.topicdataProxy = {
-      publish: (topic, value, type, timestamp) => {
+      publish: (topic, record) => {
         let msgTopicdata = {
-          topicDataRecord: {
-            topic: topic,
-            timestamp: timestamp
-          }
+          topicDataRecord: record
         };
-        msgTopicdata.topicDataRecord[type] = value;
         this.publishTopicdata(msgTopicdata);
       },
       pull: (topic) => {
@@ -82,15 +77,18 @@ class UbiiClientNode {
       return;
     }
 
-    //console.info(this.serverSpecification);
     console.info(this.clientSpecification);
 
     this.processingModuleManager = new ProcessingModuleManager(this.id, undefined, this.topicdataProxy);
 
     this.connectTopicdataSocket();
 
-    await this.subscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.START_SESSION, this._onStartSession.bind(this));
-    await this.subscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.STOP_SESSION, this._onStopSession.bind(this));
+    await this.subscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.START_SESSION, (record) => {
+      this._onStartSession(record.session);
+    });
+    await this.subscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.STOP_SESSION, (record) => {
+      this._onStopSession(record.session);
+    });
   }
 
   connectServiceSocket() {
@@ -129,22 +127,7 @@ class UbiiClientNode {
       if (topicdata.topicDataRecord) records.push(topicdata.topicDataRecord);
 
       records.forEach((record) => {
-        /*if (record && record.topic) {
-        let callbacks = this.topicDataCallbacks.get(record.topic);
-        if (!callbacks) {
-          this.topicDataRegexCallbacks.forEach((value) => {
-            let regex = value.regex;
-            if (regex.test(record.topic)) {
-              callbacks = value.callbacks;
-            }
-          });
-        }
-        callbacks &&
-          callbacks.forEach((cb) => {
-            cb(record[record.type], record.topic);
-          });
-      }*/
-        this.topicdata.publish(record.topic, record[record.type], record.type, record.timestamp);
+        this.topicdata.publish(record.topic, record);
       });
     } catch (error) {
       namida.logFailure('Ubii node', error);
@@ -152,17 +135,11 @@ class UbiiClientNode {
   }
 
   async _onStartSession(msgSession) {
-    console.info('\n_onStartSession');
-    console.info(msgSession);
     let localPMs = [];
     msgSession.processingModules.forEach((pm) => {
-      //console.info('pm specs');
-      //console.info(pm);
       if (pm.nodeId === this.id) {
         let newModule = this.processingModuleManager.createModule(pm);
         if (newModule) localPMs.push(newModule);
-        //console.info('newModule');
-        //console.info(newModule.toProtobuf());
       }
     });
 
@@ -186,11 +163,7 @@ class UbiiClientNode {
   }
 
   async _onStopSession(msgSession) {
-    console.info('\n_onStopSession');
-    //console.info(msgSession);
-
     this.processingModuleManager.processingModules.forEach((pm) => {
-      //console.info(pm);
       if (pm.sessionId === msgSession.id) {
         this.processingModuleManager.stopModule(pm);
         this.processingModuleManager.removeModule(pm);
@@ -242,16 +215,16 @@ class UbiiClientNode {
         }
       }
 
-      let token = this.topicdata.subscribe(topic, (topic, entry) => {
-        callback(entry.data, entry.type, entry.timestamp);
+      let token = this.topicdata.subscribe(topic, (record) => {
+        callback(record);
       });
 
-      let callbacks = this.topicSubscriptions.get(topic);
+      /*let callbacks = this.topicSubscriptions.get(topic);
       if (callbacks && callbacks.length > 0) {
         callbacks.push(callback);
       } else {
         this.topicSubscriptions.set(topic, [token]);
-      }
+      }*/
       resolve(token);
     });
   }

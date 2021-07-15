@@ -1,4 +1,5 @@
 const { ProtobufTranslator, MSG_TYPES } = require('@tum-far/ubii-msg-formats');
+const namida = require('@tum-far/namida/src/namida');
 
 const ZmqReply = require('./zmqReply');
 const ZmqRouter = require('./zmqRouter');
@@ -7,17 +8,29 @@ const WebsocketServer = require('./websocketServer');
 const RESTServer = require('./restServer');
 
 const ConfigService = require('../config/configService');
-const namida = require('@tum-far/namida/src/namida');
+
+let _instance = null;
+const SINGLETON_ENFORCER = Symbol();
 
 class NetworkConnectionsManager {
-  constructor() {
-    // Translators:
+  constructor(enforcer) {
+    if (enforcer !== SINGLETON_ENFORCER) {
+      throw new Error('Use ' + this.constructor.name + '.instance');
+    }
+
     this.serviceReplyTranslator = new ProtobufTranslator(MSG_TYPES.SERVICE_REPLY);
     this.serviceRequestTranslator = new ProtobufTranslator(MSG_TYPES.SERVICE_REQUEST);
     this.topicDataTranslator = new ProtobufTranslator(MSG_TYPES.TOPIC_DATA);
 
     this.ready = false;
-    this.openConnections();
+  }
+
+  static get instance() {
+    if (_instance == null) {
+      _instance = new NetworkConnectionsManager(SINGLETON_ENFORCER);
+    }
+
+    return _instance;
   }
 
   openConnections() {

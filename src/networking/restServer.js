@@ -18,8 +18,8 @@ class RESTServer {
   constructor(port = 5555, autoBind = true) {
     this.port = port;
 
-    let ipLan = NetworkConfigManager.hostAdresses.ethernet;
-    let ipWifi = NetworkConfigManager.hostAdresses.wifi;
+    let ipLan = NetworkConfigManager.instance.hostAdresses.ethernet;
+    let ipWifi = NetworkConfigManager.instance.hostAdresses.wifi;
 
     this.allowedOrigins = ConfigService.instance.getAllowedOrigins();
     this.allowedOrigins = this.allowedOrigins.concat([

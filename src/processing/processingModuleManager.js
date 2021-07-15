@@ -1,11 +1,10 @@
 const EventEmitter = require('events');
+const workerpool = require('workerpool');
 
 const namida = require('@tum-far/namida/src/namida');
 const { RuntimeTopicData } = require('@tum-far/ubii-topic-data');
 const { proto } = require('@tum-far/ubii-msg-formats');
 const ProcessingModuleProto = proto.ubii.processing.ProcessingModule;
-
-const workerpool = require('workerpool');
 
 const Utils = require('../utilities');
 const { ProcessingModule } = require('./processingModule');
@@ -46,9 +45,6 @@ class ProcessingModuleManager extends EventEmitter {
     let pm = undefined;
     if (ProcessingModuleStorage.instance.hasEntry(specs.name)) {
       pm = ProcessingModuleStorage.instance.createInstance(specs);
-      //TODO: make ID and sessionID / whole specs part of the instace creation call parameters for storage
-      //if (specs.id) pm.id = specs.id;
-      //if (specs.sessionId) pm.sessionId = specs.sessionId;
     } else {
       // create new module based on specs
       if (!specs.onProcessingStringified) {
@@ -197,10 +193,6 @@ class ProcessingModuleManager extends EventEmitter {
       this.processingModules.has(ioMapping.processingModuleId)
     );
 
-    //TODO: refactor into something more readable
-    console.info('\napplicableIOMappings');
-    console.info(applicableIOMappings);
-
     applicableIOMappings.forEach((mapping) => {
       this.ioMappings.set(mapping.processingModuleId, mapping);
       let processingModule =
@@ -243,7 +235,7 @@ class ProcessingModuleManager extends EventEmitter {
             // set accessor accordingly
             processingModule.setInputGetter(inputMapping.inputName, () => {
               let entry = topicDataBuffer.pull(topicSource);
-              return entry && entry.data;
+              return entry && entry[entry.type];
             });
 
             if (!isLockstep) {
@@ -302,7 +294,12 @@ class ProcessingModuleManager extends EventEmitter {
 
             let topicDataBuffer = isLockstep ? this.lockstepTopicData : this.topicData;
             processingModule.setOutputSetter(outputMapping.outputName, (value) => {
-              topicDataBuffer.publish(topicDestination, value, type);
+              let record = {
+                topic: topicDestination,
+                type: type
+              };
+              record[type] = value;
+              topicDataBuffer.publish(record.topic, record);
             });
 
             /*// lockstep mode
@@ -357,7 +354,7 @@ class ProcessingModuleManager extends EventEmitter {
         // assign input
         request.records.forEach((record) => {
           //TODO: refactor without use of extra topicdata to avoid write/read cycles
-          this.lockstepTopicData.publish(record.topic, record[record.type], record.type);
+          this.lockstepTopicData.publish(record.topic, record);
         });
         //this.lockstepInputTopicdata.records = request.records;
         //TODO: need to map input names for lockstepInputTopicdata to records so it can be passed as second argument to onProcessingLockstepPass()

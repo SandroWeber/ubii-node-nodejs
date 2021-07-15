@@ -1,8 +1,23 @@
 const os = require('os');
 
+let _instance = null;
+const SINGLETON_ENFORCER = Symbol();
+
 class NetworkConfigManager {
-  constructor() {
+  constructor(enforcer) {
+    if (enforcer !== SINGLETON_ENFORCER) {
+      throw new Error('Use ' + this.constructor.name + '.instance');
+    }
+    
     this.getIPConfig();
+  }
+
+  static get instance() {
+    if (_instance == null) {
+      _instance = new NetworkConfigManager(SINGLETON_ENFORCER);
+    }
+
+    return _instance;
   }
 
   getIPConfig() {
@@ -30,4 +45,4 @@ class NetworkConfigManager {
   }
 }
 
-module.exports = new NetworkConfigManager();
+module.exports = NetworkConfigManager;
