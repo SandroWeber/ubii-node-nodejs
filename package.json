@@ -21,18 +21,18 @@
   ],
   "dependencies": {
     "@tum-far/namida": "0.1.1",
-    "@tum-far/ubii-msg-formats": "0.15.12",
-    "@tum-far/ubii-topic-data": "0.3.9",
+    "@tum-far/ubii-msg-formats": "0.15.13",
+    "@tum-far/ubii-topic-data": "0.4.2",
     "express": "4.17.1",
     "shelljs": "0.8.4",
     "uuid": "8.3.2",
     "workerpool": "6.1.4",
-    "ws": "7.4.5",
-    "zeromq": "5.2.0"
+    "ws": "7.4.6",
+    "zeromq": "5.2.8"
   },
   "devDependencies": {
     "@tensorflow/tfjs-node": "2.8.4",
-    "@tensorflow-models/coco-ssd": "2.2.1"
+    "@tensorflow-models/coco-ssd": "2.2.2"
   },
   "eslintConfig": {
     "root": true,
