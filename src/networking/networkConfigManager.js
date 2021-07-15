@@ -14,7 +14,7 @@ class NetworkConfigManager {
 
   static get instance() {
     if (_instance == null) {
-      _instance = new ConfigService(SINGLETON_ENFORCER);
+      _instance = new NetworkConfigManager(SINGLETON_ENFORCER);
     }
 
     return _instance;
