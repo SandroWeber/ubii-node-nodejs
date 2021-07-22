@@ -22,7 +22,7 @@
   "dependencies": {
     "@tum-far/namida": "0.1.1",
     "@tum-far/ubii-msg-formats": "0.15.13",
-    "@tum-far/ubii-topic-data": "0.4.2",
+    "@tum-far/ubii-topic-data": "0.4.3",
     "express": "4.17.1",
     "shelljs": "0.8.4",
     "uuid": "8.3.2",
