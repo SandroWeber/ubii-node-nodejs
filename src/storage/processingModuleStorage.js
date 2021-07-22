@@ -89,9 +89,12 @@ class ProcessingModuleStorage extends Storage {
     if (enforcer !== SINGLETON_ENFORCER) {
       throw new Error('Use ' + this.constructor.name + '.instance');
     }
+
     let fileHandlerProto = new PMFileHandlerProtobuf();
     let fileHandlerJs = new PMFileHandlerJS();
-    super('processing', [fileHandlerProto, fileHandlerJs]);
+    let localDirectory = path.join(process.cwd(), '/database/processing').normalize();
+
+    super(localDirectory, [fileHandlerProto, fileHandlerJs]);
   }
 
   static get instance() {

@@ -4,8 +4,6 @@ const shelljs = require('shelljs');
 
 const namida = require('@tum-far/namida/src/namida');
 
-const { BASE_FOLDER_LOCAL_DB, BASE_FOLDER_ONLINE_DB } = require('./storageConstants');
-
 class StorageEntry {
   constructor(fileName, fileData) {
     this.fileName = fileName;
@@ -40,14 +38,13 @@ class FileHandler {
 }
 
 class Storage {
-  constructor(subFolder, listFileHandlers) {
+  constructor(localDirectory, listFileHandlers) {
     this.fileHandlers = new Map();
     listFileHandlers.forEach((handler) => {
       this.fileHandlers.set(handler.fileEnding, handler);
     });
     this.fileEndings = Array.from(this.fileHandlers.keys());
-    this.subFolder = subFolder;
-    this.localDirectory = BASE_FOLDER_LOCAL_DB + '/' + this.subFolder;
+    this.localDirectory = localDirectory;
 
     this.initialize();
   }
@@ -189,9 +186,9 @@ class Storage {
         }
       });
     } catch (error) {
-      namida.log(
+      namida.logFailure(
         this.toString(),
-        'error while reading ' + directoryPath + ':\n' + error.toString()
+        'error while reading ' + directoryPath + ':\n' + error.stack.toString() 
       );
     }
   }
