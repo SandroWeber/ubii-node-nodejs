@@ -1,5 +1,6 @@
 const namida = require('@tum-far/namida/src/namida');
 const { DEFAULT_TOPICS } = require('@tum-far/ubii-msg-formats');
+const { SUBSCRIPTION_TYPES } = require('@tum-far/ubii-topic-data');
 
 class TopicDataProxy {
   constructor(topicData, ubiiNode) {
@@ -27,8 +28,8 @@ class TopicDataProxy {
     return await this.proxySubscribeRegex(regex, callback);
   }
 
-  unsubscribe(token) {
-    return this.proxyUnsubscribe(token);
+  async unsubscribe(token) {
+    return await this.proxyUnsubscribe(token);
   }
 
   /**
@@ -40,6 +41,7 @@ class TopicDataProxy {
    */
   async proxySubscribeTopic(topic, callback) {
     let subscriptions = this.topicData.getSubscriptionTokensForTopic(topic);
+    console.info('TopicDataProxy.proxySubscribeTopic() - subscriptions: ' + subscriptions);
     if (!subscriptions || subscriptions.length === 0) {
       let message = {
         topic: DEFAULT_TOPICS.SERVICES.TOPIC_SUBSCRIPTION,
@@ -51,11 +53,13 @@ class TopicDataProxy {
 
       try {
         let replySubscribe = await this.ubiiNode.callService(message);
+        console.info(replySubscribe);
         if (replySubscribe.error) {
+          namida.logFailure('TopicDataProxy', 'server error during subscribe to "' + topic + '": ' + replySubscribe.error);
           return replySubscribe.error;
         }
       } catch (error) {
-        namida.logFailure('Ubii Node', error);
+        namida.logFailure('TopicDataProxy', 'local error during subscribe to "' + topic + '": ' +  error);
         return error;
       }
     }
@@ -63,6 +67,7 @@ class TopicDataProxy {
     let token = this.topicData.subscribe(topic, (record) => {
       callback(record);
     });
+    console.info('TopicDataProxy.proxySubscribeTopic() - topic: ' + token.topic);
 
     return token;
   }
@@ -73,6 +78,7 @@ class TopicDataProxy {
    * @param {*} callback
    */
   async proxySubscribeRegex(regex, callback) {
+    console.info('TopicDataProxy.proxySubscribeRegex: ' + regex);
     let subscriptions = this.topicData.getSubscriptionTokensForRegex(regex);
     if (!subscriptions || subscriptions.length === 0) {
       let message = {
@@ -105,13 +111,14 @@ class TopicDataProxy {
    * Unsubscribe at topicdata and possibly at master node.
    * @param {*} token
    */
-  proxyUnsubscribe(token) {
+  async proxyUnsubscribe(token) {
+    console.info('TopicDataProxy.proxyUnsubscribe: ' + token.topic);
     let result = this.topicData.unsubscribe(token);
 
     let subs = undefined;
-    if (token.type === this.topicData.SUBSCRIPTION_TYPES.TOPIC) {
+    if (token.type === SUBSCRIPTION_TYPES.TOPIC) {
       subs = this.topicData.getSubscriptionTokensForTopic(token.topic);
-    } else if (token.type === this.topicData.SUBSCRIPTION_TYPES.REGEX) {
+    } else if (token.type === SUBSCRIPTION_TYPES.REGEX) {
       subs = this.topicData.getSubscriptionTokensForRegex(token.topic);
     }
 
@@ -122,9 +129,9 @@ class TopicDataProxy {
           clientId: this.ubiiNode.id
         }
       };
-      if (token.type === this.topicData.SUBSCRIPTION_TYPES.TOPIC) {
+      if (token.type === SUBSCRIPTION_TYPES.TOPIC) {
         message.topicSubscription.unsubscribeTopics = [token.topic];
-      } else if (token.type === this.topicData.SUBSCRIPTION_TYPES.REGEX) {
+      } else if (token.type === SUBSCRIPTION_TYPES.REGEX) {
         message.topicSubscription.unsubscribeTopicRegexp = [token.topic];
       }
 

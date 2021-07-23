@@ -186,13 +186,13 @@ class ProcessingModuleManager extends EventEmitter {
 
   /* I/O <-> topic mapping functions */
 
-  applyIOMappings(ioMappings, sessionID) {
+  async applyIOMappings(ioMappings, sessionID) {
     // filter out I/O mappings for PMs that run on this node
     let applicableIOMappings = ioMappings.filter((ioMapping) =>
       this.processingModules.has(ioMapping.processingModuleId)
     );
 
-    applicableIOMappings.forEach((mapping) => {
+    for (let mapping of applicableIOMappings) {
       this.ioMappings.set(mapping.processingModuleId, mapping);
       let processingModule =
         this.getModuleByID(mapping.processingModuleId) || this.getModuleByName(mapping.processingModuleName, sessionID);
@@ -210,133 +210,132 @@ class ProcessingModuleManager extends EventEmitter {
       }
 
       // connect inputs
-      this.applyInputMappings(processingModule, mapping.inputMappings);
+      mapping.inputMappings && (await this.applyInputMappings(processingModule, mapping.inputMappings));
 
       // connect outputs
-      this.applyOutputMappings(processingModule, mapping.outputMappings);
-    });
+      mapping.outputMappings && this.applyOutputMappings(processingModule, mapping.outputMappings);
+    }
   }
 
-  applyInputMappings(processingModule, inputMappings) {
+  async applyInputMappings(processingModule, inputMappings) {
     let isLockstep = processingModule.processingMode && processingModule.processingMode.lockstep;
 
-    inputMappings &&
-      inputMappings.forEach((inputMapping) => {
-        if (!this.isValidIOMapping(processingModule, inputMapping)) {
-          namida.logFailure(
-            'ProcessingModuleManager',
-            'IO-Mapping for module ' + processingModule.name + '->' + inputMapping.inputName + ' is invalid'
-          );
-          return;
-        }
+    for (let inputMapping of inputMappings) {
+      if (!this.isValidIOMapping(processingModule, inputMapping)) {
+        namida.logFailure(
+          'ProcessingModuleManager',
+          'IO-Mapping for module ' + processingModule.name + '->' + inputMapping.inputName + ' is invalid'
+        );
+        return;
+      }
 
-        let topicSource =
-          inputMapping[inputMapping.topicSource] ||
-          inputMapping.topicSource ||
-          inputMapping.topic ||
-          inputMapping.topicMux;
-        // single topic input
-        if (typeof topicSource === 'string') {
-          // decide if we pull from lockstep data or asynchronously
-          let topicDataBuffer = isLockstep ? this.lockstepTopicData : this.topicData;
-          // set accessor accordingly
-          processingModule.setInputGetter(inputMapping.inputName, () => {
-            let entry = topicDataBuffer.pull(topicSource);
-            return entry && entry[entry.type];
-          });
+      let topicSource =
+        inputMapping[inputMapping.topicSource] ||
+        inputMapping.topicSource ||
+        inputMapping.topic ||
+        inputMapping.topicMux;
+      // single topic input
+      if (typeof topicSource === 'string') {
+        // decide if we pull from lockstep data or asynchronously
+        let topicDataBuffer = isLockstep ? this.lockstepTopicData : this.topicData;
+        // set accessor accordingly
+        processingModule.setInputGetter(inputMapping.inputName, () => {
+          let entry = topicDataBuffer.pull(topicSource);
+          return entry && entry[entry.type];
+        });
 
-          if (!isLockstep) {
-            let callback = () => {};
-            // if PM is triggered on input, notify PM for new input
-            //TODO: needs to be done for topic muxer too? does it make sense for accumulated topics to trigger processing?
-            // use-case seems not to match but leaving opportunity open could be nice
-            if (processingModule.processingMode && processingModule.processingMode.triggerOnInput) {
-              callback = () => {
-                processingModule.emit(ProcessingModule.EVENTS.NEW_INPUT, inputMapping.inputName);
-              };
-            }
-
-            let subscriptionToken = this.topicData.subscribe(topicSource, callback);
-            if (!this.pmTopicSubscriptions.has(processingModule.id)) {
-              this.pmTopicSubscriptions.set(processingModule.id, []);
-            }
-            this.pmTopicSubscriptions.get(processingModule.id).push(subscriptionToken);
+        if (!isLockstep) {
+          let callback = () => {};
+          // if PM is triggered on input, notify PM for new input
+          //TODO: needs to be done for topic muxer too? does it make sense for accumulated topics to trigger processing?
+          // use-case seems not to match but leaving opportunity open could be nice
+          if (processingModule.processingMode && processingModule.processingMode.triggerOnInput) {
+            callback = () => {
+              processingModule.emit(ProcessingModule.EVENTS.NEW_INPUT, inputMapping.inputName);
+            };
           }
+
+          let subscriptionToken = await this.topicData.subscribe(topicSource, callback);
+          if (!this.pmTopicSubscriptions.has(processingModule.id)) {
+            this.pmTopicSubscriptions.set(processingModule.id, []);
+          }
+          this.pmTopicSubscriptions.get(processingModule.id).push(subscriptionToken);
         }
-        // topic muxer input
-        else if (typeof topicSource === 'object') {
-          // decide if we pull from lockstep data or asynchronously
-          let topicDataBuffer = isLockstep ? this.lockstepTopicData : this.topicData; 
-          let multiplexer = this.deviceManager.getTopicMux(topicSource.id) || this.deviceManager.createTopicMux(specs, topicDataBuffer);
-          
-          processingModule.setInputGetter(inputMapping.inputName, () => {
-            return multiplexer.get();
-          });
-        }
-      });
+      }
+      // topic muxer input
+      else if (typeof topicSource === 'object') {
+        // decide if we pull from lockstep data or asynchronously
+        let topicDataBuffer = isLockstep ? this.lockstepTopicData : this.topicData;
+        let multiplexer =
+          this.deviceManager.getTopicMux(topicSource.id) || this.deviceManager.createTopicMux(specs, topicDataBuffer);
+
+        processingModule.setInputGetter(inputMapping.inputName, () => {
+          return multiplexer.get();
+        });
+      }
+    }
   }
 
   applyOutputMappings(processingModule, outputMappings) {
     let isLockstep = processingModule.processingMode && processingModule.processingMode.lockstep;
-    
-    outputMappings &&
-      outputMappings.forEach((outputMapping) => {
-        if (!this.isValidIOMapping(processingModule, outputMapping)) {
-          namida.logFailure(
-            'ProcessingModuleManager',
-            'IO-Mapping for module ' + processingModule.toString() + '->' + outputMapping.outputName + ' is invalid'
-          );
-          return;
-        }
 
-        let topicDestination =
-          outputMapping[outputMapping.topicDestination] ||
-          outputMapping.topicDestination ||
-          outputMapping.topic ||
-          outputMapping.topicDemux;
-        // single topic output
-        if (typeof topicDestination === 'string') {
-          let messageFormat = processingModule.getIOMessageFormat(outputMapping.outputName);
-          let type = Utils.getTopicDataTypeFromMessageFormat(messageFormat);
+    for (let outputMapping of outputMappings) {
+      if (!this.isValidIOMapping(processingModule, outputMapping)) {
+        namida.logFailure(
+          'ProcessingModuleManager',
+          'IO-Mapping for module ' + processingModule.toString() + '->' + outputMapping.outputName + ' is invalid'
+        );
+        return;
+      }
 
-          let topicDataBuffer = isLockstep ? this.lockstepTopicData : this.topicData;
-          processingModule.setOutputSetter(outputMapping.outputName, (value) => {
-            let record = {
-              topic: topicDestination,
-              type: type
-            };
-            record[type] = value;
-            topicDataBuffer.publish(record.topic, record);
-          });
+      let topicDestination =
+        outputMapping[outputMapping.topicDestination] ||
+        outputMapping.topicDestination ||
+        outputMapping.topic ||
+        outputMapping.topicDemux;
+      // single topic output
+      if (typeof topicDestination === 'string') {
+        let messageFormat = processingModule.getIOMessageFormat(outputMapping.outputName);
+        let type = Utils.getTopicDataTypeFromMessageFormat(messageFormat);
 
-          /*// lockstep mode
-            if (isLockstep) {
-              processingModule.setOutputSetter(inputMapping.inputName, (value) => {
-                let record = { topic: topicDestination };
-                record.type = type;
-                record[type] = value;
-                this.lockstepOutputTopicdata.records.push(record);
-              });
-            }
-            // all async modes (immediate cycles, frequency, input trigger) - directly publish to topicdata buffer
-            processingModule.setOutputSetter(outputMapping.outputName, (value) => {
-              this.topicData.publish(topicDestination, value, type);
-            });*/
-        }
-        // topic demuxer output
-        else if (typeof topicDestination === 'object') {
-          let demultiplexer = undefined;
-          if (topicDestination.id) {
-            demultiplexer = this.deviceManager.getTopicDemux(topicDestination.id);
-          } else {
-            let topicDataBuffer = isLockstep ? this.lockstepTopicData : this.topicData;
-            demultiplexer = this.deviceManager.createTopicDemuxerBySpecs(topicDestination, topicDataBuffer);
+        let topicDataBuffer = isLockstep ? this.lockstepTopicData : this.topicData;
+        processingModule.setOutputSetter(outputMapping.outputName, (value) => {
+          let record = {
+            topic: topicDestination,
+            type: type
+          };
+          record[type] = value;
+          topicDataBuffer.publish(record.topic, record);
+        });
+
+        /*// lockstep mode
+          if (isLockstep) {
+            processingModule.setOutputSetter(inputMapping.inputName, (value) => {
+              let record = { topic: topicDestination };
+              record.type = type;
+              record[type] = value;
+              this.lockstepOutputTopicdata.records.push(record);
+            });
           }
+          // all async modes (immediate cycles, frequency, input trigger) - directly publish to topicdata buffer
           processingModule.setOutputSetter(outputMapping.outputName, (value) => {
-            demultiplexer.push(value);
-          });
+            this.topicData.publish(topicDestination, value, type);
+          });*/
+      }
+      // topic demuxer output
+      else if (typeof topicDestination === 'object') {
+        let demultiplexer = undefined;
+        if (topicDestination.id) {
+          demultiplexer = this.deviceManager.getTopicDemux(topicDestination.id);
+        } else {
+          let topicDataBuffer = isLockstep ? this.lockstepTopicData : this.topicData;
+          demultiplexer = this.deviceManager.createTopicDemuxerBySpecs(topicDestination, topicDataBuffer);
         }
-      });
+        processingModule.setOutputSetter(outputMapping.outputName, (value) => {
+          demultiplexer.push(value);
+        });
+      }
+    }
   }
 
   isValidIOMapping(processingModule, ioMapping) {

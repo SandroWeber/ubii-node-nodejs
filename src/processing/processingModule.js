@@ -8,10 +8,12 @@ const ExternalLibrariesService = require('./externalLibrariesService');
 const Utils = require('../utilities');
 
 class ProcessingModule extends EventEmitter {
+  
   constructor(specs = {}) {
     super();
 
     // take over specs
+    //TODO: refactor to this.specs = specs and getters
     specs && Object.assign(this, specs);
     // new instance is getting new ID
     this.id = this.id || uuidv4();
@@ -125,7 +127,9 @@ class ProcessingModule extends EventEmitter {
       tLastProcess = tNow;
 
       // processing
-      this.onProcessing(deltaTime, this.ioProxy, this.ioProxy, this.state);
+      let inputData = this.readAllInputData();
+      let outputData = this.onProcessing(deltaTime, inputData, this.state);
+      this.writeAllOutputData(outputData);
 
       if (this.status === ProcessingModuleProto.Status.PROCESSING) {
         setTimeout(() => {
@@ -151,7 +155,9 @@ class ProcessingModule extends EventEmitter {
       let deltaTime = tNow - tLastProcess;
       tLastProcess = tNow;
       // processing
-      this.onProcessing(deltaTime, this.ioProxy, this.ioProxy, this.state);
+      let inputData = this.readAllInputData();
+      let outputData = this.onProcessing(deltaTime, inputData, this.state);
+      this.writeAllOutputData(outputData);
     };
 
     let checkProcessingNeeded = false;
@@ -180,11 +186,11 @@ class ProcessingModule extends EventEmitter {
   startProcessingByLockstep() {
     this.status = ProcessingModuleProto.Status.PROCESSING;
 
-    this.onProcessingLockstepPass = (deltaTime, inputs = this.ioProxy, outputs = this.ioProxy) => {
+    this.onProcessingLockstepPass = (deltaTime, inputs = this.readAllInputData()) => {
       return new Promise((resolve, reject) => {
         try {
-          this.onProcessing(deltaTime, inputs, outputs, this.state);
-          return resolve(outputs);
+          let outputData = this.onProcessing(deltaTime, inputs, this.state);
+          return resolve(outputData);
         } catch (error) {
           return reject(error);
         }
@@ -200,19 +206,17 @@ class ProcessingModule extends EventEmitter {
 
       // redefine onProcessing to be executed via workerpool
       this.originalOnProcessing = this.onProcessing;
-      let workerpoolOnProcessing = (deltaTime, inputs, outputs, state) => {
+      let workerpoolOnProcessing = (deltaTime, inputs, state) => {
         let wpExecPromise = this.workerPool
-          .exec(this.originalOnProcessing, [deltaTime, inputs, {}, state])
-          .then((result) => {
-            this.outputs.forEach((output) => {
-              if (result && result.hasOwnProperty(output.internalName)) {
-                this.ioProxy[output.internalName] = result[output.internalName];
+          .exec(this.originalOnProcessing, [deltaTime, inputs, state])
+          .then((outputData) => {
+            /*this.outputs.forEach((output) => {
+              if (outputData && outputData.hasOwnProperty(output.internalName)) {
+                this.ioProxy[output.internalName] = outputData[output.internalName];
               }
-            });
-            this.openWorkerpoolExecutions.splice(
-              this.openWorkerpoolExecutions.indexOf(wpExecPromise),
-              1
-            );
+            });*/
+            this.writeAllOutputData(outputData);
+            this.openWorkerpoolExecutions.splice(this.openWorkerpoolExecutions.indexOf(wpExecPromise), 1);
           })
           .catch((error) => {
             if (!error.message || error.message !== 'promise cancelled') {
@@ -221,19 +225,16 @@ class ProcessingModule extends EventEmitter {
             }
           });
         this.openWorkerpoolExecutions.push(wpExecPromise);
-      }
+      };
       this.onProcessing = workerpoolOnProcessing;
     } else {
-      namida.warn(
-        this.toString(),
-        'not viable to be executed via workerpool, might slow down system significantly'
-      );
+      namida.warn(this.toString(), 'not viable to be executed via workerpool, might slow down system significantly');
     }
   }
 
   async isWorkerpoolViable(workerPool) {
     try {
-      await workerPool.exec(this.onProcessing, [1, this.ioProxy, {}, this.state]);
+      await workerPool.exec(this.onProcessing, [1, this.readAllInputData(), this.state]);
       return true;
     } catch (error) {
       return false;
@@ -414,6 +415,25 @@ class ProcessingModule extends EventEmitter {
   /* I/O functions end */
 
   /* helper functions */
+
+  readAllInputData() {
+    let inputData = {};
+    for (let input of this.inputs) {
+      inputData[input.internalName] = this.ioProxy[input.internalName];
+    }
+
+    return inputData;
+  }
+
+  writeAllOutputData(outputData) {
+    if (!outputData) return;
+
+    for (let output of this.outputs) {
+      if (outputData[output.internalName]) {
+        this.ioProxy[output.internalName] = output;
+      }
+    }
+  }
 
   getIOMessageFormat(name) {
     let ios = [...this.inputs, ...this.outputs];

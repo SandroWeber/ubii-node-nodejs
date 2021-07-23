@@ -18,14 +18,14 @@ class UbiiClientNode {
     //this.topicSubscriptions = new Map();
     this.topicDataRegexCallbacks = new Map();
 
-    this.topicdata = new RuntimeTopicData();
+    this.topicDataBuffer = new RuntimeTopicData();
     //TODO: for now we prevent direct publishing to local topicdata buffer
     // until smart distinguishing of topics owned by this node vs remote topics
     // is implemented
     /*this.originalTopicdataPublish = this.topicdata.publish;
     this.topicdata.publish = this.publishTopicdataReplacement;*/
 
-    this.proxyTopicData = new TopicDataProxy(this.topicdata, this);
+    this.proxyTopicData = new TopicDataProxy(this.topicDataBuffer, this);
   }
 
   get id() {
@@ -102,17 +102,18 @@ class UbiiClientNode {
 
   _onTopicDataMessageReceived(messageBuffer) {
     try {
-      let topicdata = this.translatorTopicData.createMessageFromBuffer(messageBuffer);
-      if (!topicdata) {
+      let topicdataMsg = this.translatorTopicData.createMessageFromBuffer(messageBuffer);
+      if (!topicdataMsg) {
         namida.logFailure('Ubii node', 'could not parse topic data message from buffer');
         return;
       }
 
-      let records = topicdata.topicDataRecordList ? topicdata.topicDataRecordList.elements : [];
-      if (topicdata.topicDataRecord) records.push(topicdata.topicDataRecord);
+      let records = topicdataMsg.topicDataRecordList ? topicdataMsg.topicDataRecordList.elements : [];
+      if (topicdataMsg.topicDataRecord) records.push(topicdataMsg.topicDataRecord);
 
       records.forEach((record) => {
-        this.topicdata.publish(record.topic, record);
+        console.info('received record for ' + record.topic);
+        this.topicDataBuffer.publish(record.topic, record);
       });
     } catch (error) {
       namida.logFailure('Ubii node', error);
@@ -139,7 +140,7 @@ class UbiiClientNode {
     let response = await this.callService(pmRuntimeAddRequest);
 
     if (response.success) {
-      this.processingModuleManager.applyIOMappings(msgSession.ioMappings, msgSession.id);
+      await this.processingModuleManager.applyIOMappings(msgSession.ioMappings, msgSession.id);
 
       localPMs.forEach((pm) => {
         this.processingModuleManager.startModule(pm);

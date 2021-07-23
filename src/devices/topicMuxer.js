@@ -11,14 +11,14 @@ class TopicMuxer {
     }
   }
 
-  init() {
-    this.subscriptionToken = this.topicDataBuffer.subscribeRegex(this.specs.topicSelector, (record) => {
+  async init() {
+    this.subscriptionToken = await this.topicDataBuffer.subscribeRegex(this.specs.topicSelector, (record) => {
       this.onTopicData(record);
     });
   }
 
-  deInit() {
-    this.topicDataBuffer.unsubscribe(this.subscriptionToken);
+  async deInit() {
+    await this.topicDataBuffer.unsubscribe(this.subscriptionToken);
   }
 
   onTopicData(record) {
