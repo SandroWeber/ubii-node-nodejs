@@ -428,9 +428,10 @@ class ProcessingModule extends EventEmitter {
   writeAllOutputData(outputData) {
     if (!outputData) return;
 
-    for (let output of this.outputs) {
-      if (outputData[output.internalName]) {
-        this.ioProxy[output.internalName] = output;
+    for (let outputSpec of this.outputs) {
+      let output = outputData[outputSpec.internalName];
+      if (output) {
+        this.ioProxy[outputSpec.internalName] = output;
       }
     }
   }
