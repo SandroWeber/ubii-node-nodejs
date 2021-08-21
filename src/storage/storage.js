@@ -188,7 +188,7 @@ class Storage {
     } catch (error) {
       namida.logFailure(
         this.toString(),
-        'error while reading ' + directoryPath + ':\n' + error.stack.toString() 
+        'error while reading directory "' + directoryPath + '":\n' + error.stack.toString() 
       );
     }
   }

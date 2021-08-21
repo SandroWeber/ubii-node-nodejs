@@ -1,5 +1,3 @@
-const e = require('express');
-
 class TopicMuxer {
   constructor(specs, topicDataBuffer) {
     this.specs = specs;
@@ -22,6 +20,11 @@ class TopicMuxer {
   }
 
   onTopicData(record) {
+    // if a data type is specified and the record matches the topic selector regex but not the data type, discard
+    if (this.specs.dataType && record.type !== this.specs.dataType) {
+      return;
+    }
+
     let existingRecord = this.records.find((entry) => entry.topic === record.topic);
     if (!existingRecord) {
       this.records.push(record);

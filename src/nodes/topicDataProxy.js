@@ -41,7 +41,7 @@ class TopicDataProxy {
    */
   async proxySubscribeTopic(topic, callback) {
     let subscriptions = this.topicData.getSubscriptionTokensForTopic(topic);
-    console.info('TopicDataProxy.proxySubscribeTopic() - subscriptions: ' + subscriptions);
+    //console.info('TopicDataProxy.proxySubscribeTopic() - subscriptions: ' + subscriptions);
     if (!subscriptions || subscriptions.length === 0) {
       let message = {
         topic: DEFAULT_TOPICS.SERVICES.TOPIC_SUBSCRIPTION,
@@ -53,7 +53,7 @@ class TopicDataProxy {
 
       try {
         let replySubscribe = await this.ubiiNode.callService(message);
-        console.info(replySubscribe);
+        //console.info(replySubscribe);
         if (replySubscribe.error) {
           namida.logFailure('TopicDataProxy', 'server error during subscribe to "' + topic + '": ' + replySubscribe.error);
           return replySubscribe.error;
@@ -67,7 +67,7 @@ class TopicDataProxy {
     let token = this.topicData.subscribe(topic, (record) => {
       callback(record);
     });
-    console.info('TopicDataProxy.proxySubscribeTopic() - topic: ' + token.topic);
+    //console.info('TopicDataProxy.proxySubscribeTopic() - topic: ' + token.topic);
 
     return token;
   }
@@ -78,7 +78,7 @@ class TopicDataProxy {
    * @param {*} callback
    */
   async proxySubscribeRegex(regex, callback) {
-    console.info('TopicDataProxy.proxySubscribeRegex: ' + regex);
+    //console.info('TopicDataProxy.proxySubscribeRegex: ' + regex);
     let subscriptions = this.topicData.getSubscriptionTokensForRegex(regex);
     if (!subscriptions || subscriptions.length === 0) {
       let message = {
@@ -112,7 +112,7 @@ class TopicDataProxy {
    * @param {*} token
    */
   async proxyUnsubscribe(token) {
-    console.info('TopicDataProxy.proxyUnsubscribe: ' + token.topic);
+    //console.info('TopicDataProxy.proxyUnsubscribe: ' + token.topic);
     let result = this.topicData.unsubscribe(token);
 
     let subs = undefined;
