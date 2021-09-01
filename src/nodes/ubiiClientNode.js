@@ -68,12 +68,12 @@ class UbiiClientNode {
 
     this.connectTopicdataSocket();
 
-    /*await this.proxyTopicData.proxySubscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.START_SESSION, (record) => {
+    await this.proxyTopicData.proxySubscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.START_SESSION, (record) => {
       this._onStartSession(record.session);
-    });*/
-    await this.proxyTopicData.proxySubscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.NEW_SESSION, (record) => {
-      this._onNewSession(record.session);
     });
+    /*await this.proxyTopicData.proxySubscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.NEW_SESSION, (record) => {
+      this._onNewSession(record.session);
+    });*/
     await this.proxyTopicData.proxySubscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.STOP_SESSION, (record) => {
       this._onStopSession(record.session);
     });
