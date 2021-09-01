@@ -64,12 +64,15 @@ class UbiiClientNode {
 
     console.info(this.clientSpecification);
 
-    this.processingModuleManager = new ProcessingModuleManager(this.id, undefined, this.proxyTopicData);
+    this.processingModuleManager = new ProcessingModuleManager(this.id, this.proxyTopicData);
 
     this.connectTopicdataSocket();
 
-    await this.proxyTopicData.proxySubscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.START_SESSION, (record) => {
+    /*await this.proxyTopicData.proxySubscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.START_SESSION, (record) => {
       this._onStartSession(record.session);
+    });*/
+    await this.proxyTopicData.proxySubscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.NEW_SESSION, (record) => {
+      this._onNewSession(record.session);
     });
     await this.proxyTopicData.proxySubscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.STOP_SESSION, (record) => {
       this._onStopSession(record.session);
@@ -121,6 +124,34 @@ class UbiiClientNode {
   }
 
   async _onStartSession(msgSession) {
+    let localPMs = [];
+    msgSession.processingModules.forEach((pm) => {
+      if (pm.nodeId === this.id) {
+        let newModule = this.processingModuleManager.createModule(pm);
+        if (newModule) localPMs.push(newModule);
+      }
+    });
+
+    let pmRuntimeAddRequest = {
+      topic: DEFAULT_TOPICS.SERVICES.PM_RUNTIME_ADD,
+      processingModuleList: {
+        elements: localPMs.map((pm) => {
+          return pm.toProtobuf();
+        })
+      }
+    };
+    let response = await this.callService(pmRuntimeAddRequest);
+
+    if (response.success) {
+      await this.processingModuleManager.applyIOMappings(msgSession.ioMappings, msgSession.id);
+
+      localPMs.forEach((pm) => {
+        this.processingModuleManager.startModule(pm);
+      });
+    }
+  }
+
+  async _onNewSession(msgSession) {
     let localPMs = [];
     msgSession.processingModules.forEach((pm) => {
       if (pm.nodeId === this.id) {

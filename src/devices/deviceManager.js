@@ -1,5 +1,6 @@
 const namida = require('@tum-far/namida');
 const TopicMuxer = require('./topicMuxer');
+const TopicDemuxer = require('./topicDemuxer');
 
 let _instance = null;
 const SINGLETON_ENFORCER = Symbol();
@@ -12,6 +13,7 @@ class DeviceManager {
 
     this.devices = new Map();
     this.muxers = new Map();
+    this.demuxers = new Map();
   }
 
   static get instance() {
@@ -41,26 +43,51 @@ class DeviceManager {
     return true;
   }
 
-  createTopicMux(specs, topicDataBuffer = this.topicDataBuffer) {
+  registerDevice(specs) {
+    //TODO
+  }
+
+  getTopicMuxer(id) {
+    return this.muxers.get(id);
+  }
+
+  async createTopicMuxer(specs, topicDataBuffer = this.topicDataBuffer) {
     if (!specs.id) {
       namida.logFailure('DeviceManager', 'can not create TopicMuxer "' + specs.name + '", missing ID');
-      return false;
+      return;
     }
 
     if (this.muxers.has(specs.id)) {
       namida.logFailure('DeviceManager', 'can not create TopicMuxer "' + specs.name + '", ID already exists');
-      return false;
+      return;
     }
 
     let muxer = new TopicMuxer(specs, topicDataBuffer);
-    muxer.init();
+    await muxer.init();
     this.muxers.set(specs.id, muxer);
 
     return muxer;
   }
 
-  getTopicMux(id) {
-      return this.muxers.get(id);
+  getTopicDemuxer(id) {
+    return this.demuxers.get(id);
+  }
+
+  async createTopicDemuxer(specs, topicDataBuffer = this.topicDataBuffer) {
+    if (!specs.id) {
+      namida.logFailure('DeviceManager', 'can not create TopicDemuxer "' + specs.name + '", missing ID');
+      return;
+    }
+
+    if (this.demuxers.has(specs.id)) {
+      namida.logFailure('DeviceManager', 'can not create TopicDemuxer "' + specs.name + '", ID already exists');
+      return;
+    }
+
+    let demuxer = new TopicDemuxer(specs, topicDataBuffer);
+    this.demuxers.set(specs.id, demuxer);
+
+    return demuxer;
   }
 }
 

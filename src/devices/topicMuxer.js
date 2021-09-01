@@ -10,6 +10,8 @@ class TopicMuxer {
   }
 
   async init() {
+    console.info('\n' + this.toString());
+    console.info(this.specs);
     this.subscriptionToken = await this.topicDataBuffer.subscribeRegex(this.specs.topicSelector, (record) => {
       this.onTopicData(record);
     });
@@ -44,6 +46,10 @@ class TopicMuxer {
     return {
       elements: this.records
     };
+  }
+
+  toString() {
+    return 'TopicMuxer ' + this.specs.name + ' (ID ' + this.specs.id + ')';
   }
 }
 

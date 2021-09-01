@@ -95,12 +95,12 @@ class TopicDataProxy {
           return replySubscribe.error;
         }
       } catch (error) {
-        namida.logFailure('Ubii Node', error);
+        namida.logFailure('TopicDataProxy', error);
         return error;
       }
     }
 
-    let token = this.topicData.subscribeRegex(topic, (record) => {
+    let token = this.topicData.subscribeRegex(regex, (record) => {
       callback(record);
     });
 

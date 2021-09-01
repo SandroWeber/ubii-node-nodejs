@@ -9,13 +9,14 @@ const ProcessingModuleProto = proto.ubii.processing.ProcessingModule;
 const Utils = require('../utilities');
 const { ProcessingModule } = require('./processingModule');
 const ProcessingModuleStorage = require('../storage/processingModuleStorage');
+const DeviceManager = require('../devices/deviceManager');
 
 class ProcessingModuleManager extends EventEmitter {
-  constructor(nodeID, deviceManager, topicData = undefined) {
+  constructor(nodeID, topicData = undefined) {
     super();
 
     this.nodeID = nodeID;
-    this.deviceManager = deviceManager;
+    this.deviceManager = DeviceManager.instance;
     this.topicData = topicData;
 
     this.processingModules = new Map();
@@ -200,11 +201,11 @@ class ProcessingModuleManager extends EventEmitter {
         namida.logFailure(
           'ProcessingModuleManager',
           "can't find processing module for I/O mapping, given: ID = " +
-            mapping.processingModuleId +
-            ', name = ' +
-            mapping.processingModuleName +
-            ', session ID = ' +
-            sessionID
+          mapping.processingModuleId +
+          ', name = ' +
+          mapping.processingModuleName +
+          ', session ID = ' +
+          sessionID
         );
         return;
       }
@@ -245,7 +246,7 @@ class ProcessingModuleManager extends EventEmitter {
         });
 
         if (!isLockstep) {
-          let callback = () => {};
+          let callback = () => { };
           // if PM is triggered on input, notify PM for new input
           //TODO: needs to be done for topic muxer too? does it make sense for accumulated topics to trigger processing?
           // use-case seems not to match but leaving opportunity open could be nice
@@ -267,7 +268,7 @@ class ProcessingModuleManager extends EventEmitter {
         // decide if we pull from lockstep data or asynchronously
         let topicDataBuffer = isLockstep ? this.lockstepTopicData : this.topicData;
         let multiplexer =
-          this.deviceManager.getTopicMux(topicSource.id) || this.deviceManager.createTopicMux(specs, topicDataBuffer);
+          this.deviceManager.getTopicMuxer(topicSource.id) || await this.deviceManager.createTopicMuxer(topicSource, topicDataBuffer);
 
         processingModule.setInputGetter(inputMapping.inputName, () => {
           return multiplexer.get();
@@ -278,12 +279,17 @@ class ProcessingModuleManager extends EventEmitter {
 
   applyOutputMappings(processingModule, outputMappings) {
     let isLockstep = processingModule.processingMode && processingModule.processingMode.lockstep;
+    let topicDataBuffer = isLockstep ? this.lockstepTopicData : this.topicData;
 
     for (let outputMapping of outputMappings) {
       if (!this.isValidIOMapping(processingModule, outputMapping)) {
         namida.logFailure(
           'ProcessingModuleManager',
-          'IO-Mapping for module ' + processingModule.toString() + '->' + outputMapping.outputName + ' is invalid'
+          'OutputMapping for module ' + processingModule.toString() + ' -> "' + outputMapping.outputName + '" is invalid'
+        );
+        namida.logFailure(
+          'ProcessingModuleManager',
+          outputMapping
         );
         return;
       }
@@ -298,7 +304,6 @@ class ProcessingModuleManager extends EventEmitter {
         let messageFormat = processingModule.getIOMessageFormat(outputMapping.outputName);
         let type = Utils.getTopicDataTypeFromMessageFormat(messageFormat);
 
-        let topicDataBuffer = isLockstep ? this.lockstepTopicData : this.topicData;
         processingModule.setOutputSetter(outputMapping.outputName, (value) => {
           let record = {
             topic: topicDestination,
@@ -324,15 +329,11 @@ class ProcessingModuleManager extends EventEmitter {
       }
       // topic demuxer output
       else if (typeof topicDestination === 'object') {
-        let demultiplexer = undefined;
-        if (topicDestination.id) {
-          demultiplexer = this.deviceManager.getTopicDemux(topicDestination.id);
-        } else {
-          let topicDataBuffer = isLockstep ? this.lockstepTopicData : this.topicData;
-          demultiplexer = this.deviceManager.createTopicDemuxerBySpecs(topicDestination, topicDataBuffer);
-        }
-        processingModule.setOutputSetter(outputMapping.outputName, (value) => {
-          demultiplexer.push(value);
+        let demultiplexer =
+          this.deviceManager.getTopicDemuxer(topicDestination.id) || this.deviceManager.createTopicDemuxer(topicDestination, topicDataBuffer);
+
+        processingModule.setOutputSetter(outputMapping.outputName, (demuxerRecordList) => {
+          demultiplexer.publish(demuxerRecordList);
         });
       }
     }
