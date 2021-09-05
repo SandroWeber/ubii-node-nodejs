@@ -125,7 +125,7 @@ class UbiiClientNode {
 
   async _onStartSession(msgSession) {
     let localPMs = [];
-    //TODO: clean split between "_onNewSession" and "_onStartSession"
+    //TODO: after adding PM_RUNTIME_START to msg-formats, clean split between "_onNewSession" and "_onStartSession"
     msgSession.processingModules.forEach((pm) => {
       if (pm.nodeId === this.id) {
         let newModule = this.processingModuleManager.createModule(pm);
@@ -153,7 +153,7 @@ class UbiiClientNode {
     }
   }
 
-  async _onNewSession(msgSession) {
+  /*async _onNewSession(msgSession) {
     let localPMs = [];
     msgSession.processingModules.forEach((pm) => {
       if (pm.nodeId === this.id) {
@@ -179,7 +179,7 @@ class UbiiClientNode {
         this.processingModuleManager.startModule(pm);
       });
     }
-  }
+  }*/
 
   async _onStopSession(msgSession) {
     this.processingModuleManager.processingModules.forEach((pm) => {

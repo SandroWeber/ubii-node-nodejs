@@ -88,6 +88,8 @@ class ProcessingModule extends EventEmitter {
       let message = 'started';
       if (this.workerPool) {
         message += ' (using workerpool)';
+      } else {
+        message += ' (without workerpool)';
       }
       namida.logSuccess(this.toString(), message);
       return true;

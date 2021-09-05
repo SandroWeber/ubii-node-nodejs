@@ -22,6 +22,8 @@ class TopicMuxer {
   }
 
   onTopicData(record) {
+    console.info(this.toString() + ' onTopicData()');
+    console.info(record);
     // if a data type is specified and the record matches the topic selector regex but not the data type, discard
     if (this.specs.dataType && record.type !== this.specs.dataType) {
       return;
@@ -43,6 +45,8 @@ class TopicMuxer {
   }
 
   get() {
+    console.info(this.toString() + ' get()');
+    console.info(this.records);
     return {
       elements: this.records
     };

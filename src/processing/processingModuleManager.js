@@ -220,6 +220,7 @@ class ProcessingModuleManager extends EventEmitter {
 
   async applyInputMappings(processingModule, inputMappings) {
     let isLockstep = processingModule.processingMode && processingModule.processingMode.lockstep;
+    let topicDataBuffer = isLockstep ? this.lockstepTopicData : this.topicData;
 
     for (let inputMapping of inputMappings) {
       if (!this.isValidIOMapping(processingModule, inputMapping)) {
@@ -235,44 +236,57 @@ class ProcessingModuleManager extends EventEmitter {
         inputMapping.topicSource ||
         inputMapping.topic ||
         inputMapping.topicMux;
+
+      // set approriate input getter
+      let inputGetterCallback = undefined;
       // single topic input
       if (typeof topicSource === 'string') {
-        // decide if we pull from lockstep data or asynchronously
-        let topicDataBuffer = isLockstep ? this.lockstepTopicData : this.topicData;
-        // set accessor accordingly
-        processingModule.setInputGetter(inputMapping.inputName, () => {
+        inputGetterCallback = () => {
           let entry = topicDataBuffer.pull(topicSource);
           return entry && entry[entry.type];
-        });
+        };
+      }
+      // topic muxer input
+      else if (typeof topicSource === 'object') {
+        let multiplexer =
+          this.deviceManager.getTopicMuxer(topicSource.id) || await this.deviceManager.createTopicMuxer(topicSource, topicDataBuffer);
 
-        if (!isLockstep) {
-          let callback = () => { };
-          // if PM is triggered on input, notify PM for new input
-          //TODO: needs to be done for topic muxer too? does it make sense for accumulated topics to trigger processing?
-          // use-case seems not to match but leaving opportunity open could be nice
-          if (processingModule.processingMode && processingModule.processingMode.triggerOnInput) {
-            callback = () => {
-              processingModule.emit(ProcessingModule.EVENTS.NEW_INPUT, inputMapping.inputName);
-            };
-          }
+        inputGetterCallback = () => {
+          return multiplexer.get();
+        };
+      }
+      processingModule.setInputGetter(inputMapping.inputName, inputGetterCallback);
 
+      // subscribe to topics necessary for PM (if not lockstep), set input event emitter in case of trigger on input mode
+      if (!isLockstep) {
+        // if mode frequency, we do nothing but subscribe nonetheless to indicate our PM on this node needs the topic
+        //TODO: allow undefined callbacks? potential ambiguous scenarios?
+        let callback = () => { };
+        // if PM is triggered on input, notify PM for new input
+        //TODO: needs to be done for topic muxer too? does it make sense for accumulated topics to trigger processing?
+        // use-case seems not to match but leaving opportunity open could be nice
+        if (processingModule.processingMode && processingModule.processingMode.triggerOnInput) {
+          callback = () => {
+            processingModule.emit(ProcessingModule.EVENTS.NEW_INPUT, inputMapping.inputName);
+          };
+        }
+
+        // single topic input
+        if (typeof topicSource === 'string') {
           let subscriptionToken = await this.topicData.subscribe(topicSource, callback);
           if (!this.pmTopicSubscriptions.has(processingModule.id)) {
             this.pmTopicSubscriptions.set(processingModule.id, []);
           }
           this.pmTopicSubscriptions.get(processingModule.id).push(subscriptionToken);
         }
-      }
-      // topic muxer input
-      else if (typeof topicSource === 'object') {
-        // decide if we pull from lockstep data or asynchronously
-        let topicDataBuffer = isLockstep ? this.lockstepTopicData : this.topicData;
-        let multiplexer =
-          this.deviceManager.getTopicMuxer(topicSource.id) || await this.deviceManager.createTopicMuxer(topicSource, topicDataBuffer);
-
-        processingModule.setInputGetter(inputMapping.inputName, () => {
-          return multiplexer.get();
-        });
+        // topic muxer input
+        else if (typeof topicSource === 'object') {
+          let subscriptionToken = await this.topicData.subscribeRegex(topicSource.topicSelector, callback);
+          if (!this.pmTopicSubscriptions.has(processingModule.id)) {
+            this.pmTopicSubscriptions.set(processingModule.id, []);
+          }
+          this.pmTopicSubscriptions.get(processingModule.id).push(subscriptionToken);
+        }
       }
     }
   }
