@@ -125,11 +125,18 @@ class UbiiClientNode {
 
   async _onStartSession(msgSession) {
     let localPMs = [];
+    //TODO: clean split between "_onNewSession" and "_onStartSession"
     msgSession.processingModules.forEach((pm) => {
       if (pm.nodeId === this.id) {
         let newModule = this.processingModuleManager.createModule(pm);
         if (newModule) localPMs.push(newModule);
       }
+    });
+
+    await this.processingModuleManager.applyIOMappings(msgSession.ioMappings, msgSession.id);
+
+    localPMs.forEach((pm) => {
+      this.processingModuleManager.startModule(pm);
     });
 
     let pmRuntimeAddRequest = {
@@ -141,13 +148,8 @@ class UbiiClientNode {
       }
     };
     let response = await this.callService(pmRuntimeAddRequest);
-
-    if (response.success) {
-      await this.processingModuleManager.applyIOMappings(msgSession.ioMappings, msgSession.id);
-
-      localPMs.forEach((pm) => {
-        this.processingModuleManager.startModule(pm);
-      });
+    if (response.error) {
+      namida.logFailure('Start Session Error', response.error);
     }
   }
 

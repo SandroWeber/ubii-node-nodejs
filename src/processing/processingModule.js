@@ -65,6 +65,8 @@ class ProcessingModule extends EventEmitter {
     });
 
     this.translatorProtobuf = new ProtobufTranslator(MSG_TYPES.PM);
+
+    console.info(this.toString() + ' constructed');
   }
 
   /* execution control */
