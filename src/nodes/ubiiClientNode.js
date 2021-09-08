@@ -116,6 +116,7 @@ class UbiiClientNode {
 
       records.forEach((record) => {
         console.info('received record for ' + record.topic);
+        console.info(record);
         this.topicDataBuffer.publish(record.topic, record);
       });
     } catch (error) {

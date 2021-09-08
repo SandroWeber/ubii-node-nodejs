@@ -63,7 +63,7 @@ class DeviceManager {
     }
 
     let muxer = new TopicMuxer(specs, topicDataBuffer);
-    await muxer.init();
+    //await muxer.init();
     this.muxers.set(specs.id, muxer);
 
     return muxer;
@@ -73,7 +73,7 @@ class DeviceManager {
     return this.demuxers.get(id);
   }
 
-  async createTopicDemuxer(specs, topicDataBuffer = this.topicDataBuffer) {
+  createTopicDemuxer(specs, topicDataBuffer = this.topicDataBuffer) {
     if (!specs.id) {
       namida.logFailure('DeviceManager', 'can not create TopicDemuxer "' + specs.name + '", missing ID');
       return;

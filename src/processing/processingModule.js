@@ -8,7 +8,6 @@ const ExternalLibrariesService = require('./externalLibrariesService');
 const Utils = require('../utilities');
 
 class ProcessingModule extends EventEmitter {
-  
   constructor(specs = {}) {
     super();
 
@@ -153,13 +152,28 @@ class ProcessingModule extends EventEmitter {
     let tLastProcess = Date.now();
 
     let processingPass = () => {
-      inputFlags = [];
       // timing
       let tNow = Date.now();
       let deltaTime = tNow - tLastProcess;
       tLastProcess = tNow;
-      // processing
+      // get input data
       let inputData = this.readAllInputData();
+      console.info('before processing inputData:');
+      console.info(inputData);
+      console.info('inputTriggerNames:');
+      console.info(this.inputTriggerNames);
+      for (let inputTriggerName of this.inputTriggerNames) {
+        if (!inputData[inputTriggerName]) {
+          namida.logFailure(
+            this.toString(),
+            'input trigger for "' + inputTriggerName + '", but inputData is ' + inputData[inputTriggerName]
+          );
+        } else {
+          this.state.inputTriggerNames = [...this.inputTriggerNames]; // copy those input names that received update trigger to state
+        }
+      }
+      this.inputTriggerNames = [];
+      // processing
       let outputData = this.onProcessing(deltaTime, inputData, this.state);
       this.writeAllOutputData(outputData);
     };
@@ -167,7 +181,7 @@ class ProcessingModule extends EventEmitter {
     let checkProcessingNeeded = false;
     let checkProcessing = () => {
       let inputUpdatesFulfilled =
-        !allInputsNeedUpdate || this.inputs.every((element) => inputFlags.includes(element.internalName));
+        !allInputsNeedUpdate || this.inputs.every((element) => this.inputTriggerNames.includes(element.internalName));
       let minDelayFulfilled = !minDelayMs || Date.now() - tLastProcess >= minDelayMs;
       if (inputUpdatesFulfilled && minDelayFulfilled) {
         processingPass();
@@ -175,9 +189,9 @@ class ProcessingModule extends EventEmitter {
       checkProcessingNeeded = false;
     };
 
-    let inputFlags = [];
+    this.inputTriggerNames = [];
     this.on(ProcessingModule.EVENTS.NEW_INPUT, (inputName) => {
-      inputFlags.push(inputName);
+      if (!this.inputTriggerNames.includes(inputName)) this.inputTriggerNames.push(inputName);
       if (!checkProcessingNeeded) {
         checkProcessingNeeded = true;
         setImmediate(() => {
@@ -225,7 +239,7 @@ class ProcessingModule extends EventEmitter {
           .catch((error) => {
             if (!error.message || error.message !== 'promise cancelled') {
               // executuion was not just cancelled via workerpool API
-              namida.logFailure(this.toString(), 'workerpool execution failed:\n' + error);
+              namida.logFailure(this.toString(), 'workerpool execution failed - ' + error + '\n' + error.stack);
             }
           });
         this.openWorkerpoolExecutions.push(wpExecPromise);

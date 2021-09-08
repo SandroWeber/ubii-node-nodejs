@@ -2,6 +2,7 @@ class TopicMuxer {
   constructor(specs, topicDataBuffer) {
     this.specs = specs;
     this.topicDataBuffer = topicDataBuffer;
+
     this.records = [];
 
     if (this.specs.identityMatchPattern) {
@@ -9,17 +10,17 @@ class TopicMuxer {
     }
   }
 
-  async init() {
+  /*async init() {
     console.info('\n' + this.toString());
     console.info(this.specs);
     this.subscriptionToken = await this.topicDataBuffer.subscribeRegex(this.specs.topicSelector, (record) => {
       this.onTopicData(record);
     });
-  }
+  }*/
 
-  async deInit() {
+  /*async deInit() {
     await this.topicDataBuffer.unsubscribe(this.subscriptionToken);
-  }
+  }*/
 
   onTopicData(record) {
     console.info(this.toString() + ' onTopicData()');
@@ -31,6 +32,7 @@ class TopicMuxer {
 
     let existingRecord = this.records.find((entry) => entry.topic === record.topic);
     if (!existingRecord) {
+      record.type = record.type || this.specs.dataType;
       this.records.push(record);
       if (this.identityRegex) {
         let identityMatches = this.identityRegex.exec(record.topic);
@@ -44,12 +46,16 @@ class TopicMuxer {
     }
   }
 
-  get() {
-    console.info(this.toString() + ' get()');
-    console.info(this.records);
+  getRecords() {
+    //console.info(this.toString() + ' getRecords()');
+    //console.info(this.records);
     return {
       elements: this.records
     };
+  }
+
+  getSubscriptionToken() {
+    return this.subscriptionToken;
   }
 
   toString() {

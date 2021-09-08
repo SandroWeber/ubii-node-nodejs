@@ -201,11 +201,11 @@ class ProcessingModuleManager extends EventEmitter {
         namida.logFailure(
           'ProcessingModuleManager',
           "can't find processing module for I/O mapping, given: ID = " +
-          mapping.processingModuleId +
-          ', name = ' +
-          mapping.processingModuleName +
-          ', session ID = ' +
-          sessionID
+            mapping.processingModuleId +
+            ', name = ' +
+            mapping.processingModuleName +
+            ', session ID = ' +
+            sessionID
         );
         return;
       }
@@ -237,22 +237,26 @@ class ProcessingModuleManager extends EventEmitter {
         inputMapping.topic ||
         inputMapping.topicMux;
 
+      let isTopicMuxer = typeof topicSource === 'object';
+
       // set approriate input getter
       let inputGetterCallback = undefined;
+      let multiplexer = undefined;
       // single topic input
-      if (typeof topicSource === 'string') {
+      if (!isTopicMuxer) {
         inputGetterCallback = () => {
           let entry = topicDataBuffer.pull(topicSource);
           return entry && entry[entry.type];
         };
       }
       // topic muxer input
-      else if (typeof topicSource === 'object') {
-        let multiplexer =
-          this.deviceManager.getTopicMuxer(topicSource.id) || await this.deviceManager.createTopicMuxer(topicSource, topicDataBuffer);
+      else if (isTopicMuxer) {
+        multiplexer =
+          this.deviceManager.getTopicMuxer(topicSource.id) ||
+          (await this.deviceManager.createTopicMuxer(topicSource, topicDataBuffer));
 
         inputGetterCallback = () => {
-          return multiplexer.get();
+          return multiplexer.getRecords();
         };
       }
       processingModule.setInputGetter(inputMapping.inputName, inputGetterCallback);
@@ -261,27 +265,34 @@ class ProcessingModuleManager extends EventEmitter {
       if (!isLockstep) {
         // if mode frequency, we do nothing but subscribe nonetheless to indicate our PM on this node needs the topic
         //TODO: allow undefined callbacks? potential ambiguous scenarios?
-        let callback = () => { };
+        let callback = undefined;
         // if PM is triggered on input, notify PM for new input
         //TODO: needs to be done for topic muxer too? does it make sense for accumulated topics to trigger processing?
         // use-case seems not to match but leaving opportunity open could be nice
         if (processingModule.processingMode && processingModule.processingMode.triggerOnInput) {
-          callback = () => {
-            processingModule.emit(ProcessingModule.EVENTS.NEW_INPUT, inputMapping.inputName);
-          };
+          if (!isTopicMuxer) {
+            callback = () => {
+              processingModule.emit(ProcessingModule.EVENTS.NEW_INPUT, inputMapping.inputName);
+            };
+          } else if (isTopicMuxer) {
+            callback = (record) => {
+              multiplexer.onTopicData(record);
+              processingModule.emit(ProcessingModule.EVENTS.NEW_INPUT, inputMapping.inputName);
+            };
+          }
         }
 
         // single topic input
-        if (typeof topicSource === 'string') {
-          let subscriptionToken = await this.topicData.subscribe(topicSource, callback);
+        if (!isTopicMuxer) {
+          let subscriptionToken = await topicDataBuffer.subscribe(topicSource, callback);
           if (!this.pmTopicSubscriptions.has(processingModule.id)) {
             this.pmTopicSubscriptions.set(processingModule.id, []);
           }
           this.pmTopicSubscriptions.get(processingModule.id).push(subscriptionToken);
         }
         // topic muxer input
-        else if (typeof topicSource === 'object') {
-          let subscriptionToken = await this.topicData.subscribeRegex(topicSource.topicSelector, callback);
+        else if (isTopicMuxer) {
+          let subscriptionToken = await topicDataBuffer.subscribeRegex(topicSource.topicSelector, callback);
           if (!this.pmTopicSubscriptions.has(processingModule.id)) {
             this.pmTopicSubscriptions.set(processingModule.id, []);
           }
@@ -299,12 +310,13 @@ class ProcessingModuleManager extends EventEmitter {
       if (!this.isValidIOMapping(processingModule, outputMapping)) {
         namida.logFailure(
           'ProcessingModuleManager',
-          'OutputMapping for module ' + processingModule.toString() + ' -> "' + outputMapping.outputName + '" is invalid'
+          'OutputMapping for module ' +
+            processingModule.toString() +
+            ' -> "' +
+            outputMapping.outputName +
+            '" is invalid'
         );
-        namida.logFailure(
-          'ProcessingModuleManager',
-          outputMapping
-        );
+        namida.logFailure('ProcessingModuleManager', outputMapping);
         return;
       }
 
@@ -344,7 +356,8 @@ class ProcessingModuleManager extends EventEmitter {
       // topic demuxer output
       else if (typeof topicDestination === 'object') {
         let demultiplexer =
-          this.deviceManager.getTopicDemuxer(topicDestination.id) || this.deviceManager.createTopicDemuxer(topicDestination, topicDataBuffer);
+          this.deviceManager.getTopicDemuxer(topicDestination.id) ||
+          this.deviceManager.createTopicDemuxer(topicDestination, topicDataBuffer);
 
         processingModule.setOutputSetter(outputMapping.outputName, (demuxerRecordList) => {
           demultiplexer.publish(demuxerRecordList);
