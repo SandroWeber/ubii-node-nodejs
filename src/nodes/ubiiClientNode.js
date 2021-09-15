@@ -57,12 +57,11 @@ class UbiiClientNode {
     });
     if (replyClientRegistration.client) {
       this.clientSpecification = replyClientRegistration.client;
+      namida.logSuccess(this.toString(), 'successfully registered at master node');
     } else {
       namida.logFailure('UbiiNode.initialize()', 'client registration failed');
       return;
     }
-
-    console.info(this.clientSpecification);
 
     this.processingModuleManager = new ProcessingModuleManager(this.id, this.proxyTopicData);
 
@@ -104,24 +103,22 @@ class UbiiClientNode {
   }
 
   _onTopicDataMessageReceived(messageBuffer) {
-    try {
-      let topicdataMsg = this.translatorTopicData.createMessageFromBuffer(messageBuffer);
-      if (!topicdataMsg) {
-        namida.logFailure('Ubii node', 'could not parse topic data message from buffer');
-        return;
-      }
-
-      let records = topicdataMsg.topicDataRecordList ? topicdataMsg.topicDataRecordList.elements : [];
-      if (topicdataMsg.topicDataRecord) records.push(topicdataMsg.topicDataRecord);
-
-      records.forEach((record) => {
-        console.info('received record for ' + record.topic);
-        console.info(record);
-        this.topicDataBuffer.publish(record.topic, record);
-      });
-    } catch (error) {
-      namida.logFailure('Ubii node', error);
+    let topicdataMsg = this.translatorTopicData.createMessageFromBuffer(messageBuffer);
+    if (!topicdataMsg) {
+      namida.logFailure('TopicData received', 'could not parse topic data message from buffer');
+      return;
     }
+
+    let records = topicdataMsg.topicDataRecordList ? topicdataMsg.topicDataRecordList.elements : [];
+    if (topicdataMsg.topicDataRecord) records.push(topicdataMsg.topicDataRecord);
+
+    records.forEach((record) => {
+      try {
+        this.topicDataBuffer.publish(record.topic, record);
+      } catch (error) {
+        namida.logFailure('TopicData received', 'topic "' + record.topic + '"\n' + error);
+      }
+    });
   }
 
   async _onStartSession(msgSession) {
@@ -136,9 +133,9 @@ class UbiiClientNode {
 
     await this.processingModuleManager.applyIOMappings(msgSession.ioMappings, msgSession.id);
 
-    localPMs.forEach((pm) => {
-      this.processingModuleManager.startModule(pm);
-    });
+    for (let pm of localPMs) {
+      await this.processingModuleManager.startModule(pm);
+    }
 
     let pmRuntimeAddRequest = {
       topic: DEFAULT_TOPICS.SERVICES.PM_RUNTIME_ADD,
@@ -210,6 +207,17 @@ class UbiiClientNode {
    */
   generateTimestamp() {
     return { millis: Date.now() };
+  }
+
+  toString() {
+    let output = this.name;
+    if (this.clientSpecification && this.clientSpecification.id) {
+      output += ' (ID ' + this.clientSpecification.id + ')';
+    } else {
+      output += ' (no ID, unregistered)';
+    }
+
+    return output;
   }
 }
 

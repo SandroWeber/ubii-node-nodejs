@@ -154,8 +154,9 @@ class ProcessingModuleManager extends EventEmitter {
 
   /* running modules */
 
-  startModule(pmSpec) {
+  async startModule(pmSpec) {
     let pm = this.processingModules.get(pmSpec.id);
+    await pm.initialized;
     pm && pm.start();
   }
 
@@ -265,7 +266,7 @@ class ProcessingModuleManager extends EventEmitter {
       if (!isLockstep) {
         // if mode frequency, we do nothing but subscribe nonetheless to indicate our PM on this node needs the topic
         //TODO: allow undefined callbacks? potential ambiguous scenarios?
-        let callback = undefined;
+        let callback = () => {};
         // if PM is triggered on input, notify PM for new input
         //TODO: needs to be done for topic muxer too? does it make sense for accumulated topics to trigger processing?
         // use-case seems not to match but leaving opportunity open could be nice

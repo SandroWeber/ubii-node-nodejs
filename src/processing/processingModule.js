@@ -64,14 +64,14 @@ class ProcessingModule extends EventEmitter {
     });
 
     this.translatorProtobuf = new ProtobufTranslator(MSG_TYPES.PM);
-
-    console.info(this.toString() + ' constructed');
   }
 
   /* execution control */
 
   start() {
-    this.openWorkerpoolExecutions = [];
+    if (this.workerPool) {
+      this.openWorkerpoolExecutions = [];
+    }
 
     if (this.processingMode && this.processingMode.frequency) {
       this.startProcessingByFrequency();
@@ -110,9 +110,11 @@ class ProcessingModule extends EventEmitter {
       return undefined;
     };
 
-    this.openWorkerpoolExecutions.forEach((exec) => {
-      exec.cancel();
-    });
+    if (this.workerPool) {
+      for (let exec of this.openWorkerpoolExecutions) {
+        exec.cancel();
+      }
+    }
 
     namida.logSuccess(this.toString(), 'stopped');
   }
@@ -123,24 +125,25 @@ class ProcessingModule extends EventEmitter {
     let tLastProcess = Date.now();
     let msFrequency = 1000 / this.processingMode.frequency.hertz;
 
-    let processIteration = () => {
+    let processingPass = () => {
       // timing
       let tNow = Date.now();
       let deltaTime = tNow - tLastProcess;
       tLastProcess = tNow;
 
       // processing
-      let inputData = this.readAllInputData();
-      let outputData = this.onProcessing(deltaTime, inputData, this.state);
-      this.writeAllOutputData(outputData);
+      let inputs = this.readAllInputData();
+      let { outputs, state } = this.onProcessing(deltaTime, inputs, this.state);
+      this.writeAllOutputData(outputs);
+      this.state = state ? state : this.state;
 
       if (this.status === ProcessingModuleProto.Status.PROCESSING) {
         setTimeout(() => {
-          processIteration();
+          processingPass();
         }, msFrequency);
       }
     };
-    processIteration();
+    processingPass();
   }
 
   startProcessingByTriggerOnInput() {
@@ -156,30 +159,30 @@ class ProcessingModule extends EventEmitter {
       let tNow = Date.now();
       let deltaTime = tNow - tLastProcess;
       tLastProcess = tNow;
-      // get input data
+      // processing
       let inputData = this.readAllInputData();
-      console.info('before processing inputData:');
-      console.info(inputData);
-      console.info('inputTriggerNames:');
-      console.info(this.inputTriggerNames);
       for (let inputTriggerName of this.inputTriggerNames) {
         if (!inputData[inputTriggerName]) {
           namida.logFailure(
             this.toString(),
-            'input trigger for "' + inputTriggerName + '", but inputData is ' + inputData[inputTriggerName]
+            'input trigger for "' + inputTriggerName + '", but input data is ' + inputData[inputTriggerName]
           );
         } else {
           this.state.inputTriggerNames = [...this.inputTriggerNames]; // copy those input names that received update trigger to state
         }
       }
       this.inputTriggerNames = [];
-      // processing
-      let outputData = this.onProcessing(deltaTime, inputData, this.state);
-      this.writeAllOutputData(outputData);
+
+      let { outputs, state } = this.onProcessing(deltaTime, inputData, this.state);
+
+      this.writeAllOutputData(outputs);
+      this.state = state ? state : this.state;
     };
 
     let checkProcessingNeeded = false;
     let checkProcessing = () => {
+      if (this.status !== ProcessingModuleProto.Status.PROCESSING) return;
+
       let inputUpdatesFulfilled =
         !allInputsNeedUpdate || this.inputs.every((element) => this.inputTriggerNames.includes(element.internalName));
       let minDelayFulfilled = !minDelayMs || Date.now() - tLastProcess >= minDelayMs;

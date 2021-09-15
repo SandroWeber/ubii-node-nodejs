@@ -10,21 +10,7 @@ class TopicMuxer {
     }
   }
 
-  /*async init() {
-    console.info('\n' + this.toString());
-    console.info(this.specs);
-    this.subscriptionToken = await this.topicDataBuffer.subscribeRegex(this.specs.topicSelector, (record) => {
-      this.onTopicData(record);
-    });
-  }*/
-
-  /*async deInit() {
-    await this.topicDataBuffer.unsubscribe(this.subscriptionToken);
-  }*/
-
   onTopicData(record) {
-    console.info(this.toString() + ' onTopicData()');
-    console.info(record);
     // if a data type is specified and the record matches the topic selector regex but not the data type, discard
     if (this.specs.dataType && record.type !== this.specs.dataType) {
       return;
@@ -47,8 +33,6 @@ class TopicMuxer {
   }
 
   getRecords() {
-    //console.info(this.toString() + ' getRecords()');
-    //console.info(this.records);
     return {
       elements: this.records
     };

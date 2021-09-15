@@ -61,7 +61,7 @@ class ZmqRouter {
     this.endpoint = this.transportProtocol + '://' + this.address;
     this.socket.bind(this.endpoint, (err) => {
       if (err) {
-        console.info('Error: ' + err);
+        console.error('Error: ' + err);
       } else {
         this.ready = true;
       }
