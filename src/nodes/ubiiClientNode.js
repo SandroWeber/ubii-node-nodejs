@@ -112,9 +112,7 @@ class UbiiClientNode {
     let records = topicdataMsg.topicDataRecordList ? topicdataMsg.topicDataRecordList.elements : [];
     if (topicdataMsg.topicDataRecord) records.push(topicdataMsg.topicDataRecord);
 
-    console.info('_onTopicDataMessageReceived:');
     records.forEach((record) => {
-      console.info(record);
       try {
         this.topicDataBuffer.publish(record.topic, record);
       } catch (error) {
