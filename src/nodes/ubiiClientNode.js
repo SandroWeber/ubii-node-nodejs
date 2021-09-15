@@ -103,7 +103,7 @@ class UbiiClientNode {
   }
 
   _onTopicDataMessageReceived(messageBuffer) {
-    let topicdataMsg = this.translatorTopicData.createMessageFromBuffer(messageBuffer);
+    let topicdataMsg = this.translatorTopicData.createPayloadFromBuffer(messageBuffer);
     if (!topicdataMsg) {
       namida.logFailure('TopicData received', 'could not parse topic data message from buffer');
       return;
@@ -112,7 +112,9 @@ class UbiiClientNode {
     let records = topicdataMsg.topicDataRecordList ? topicdataMsg.topicDataRecordList.elements : [];
     if (topicdataMsg.topicDataRecord) records.push(topicdataMsg.topicDataRecord);
 
+    console.info('_onTopicDataMessageReceived:');
     records.forEach((record) => {
+      console.info(record);
       try {
         this.topicDataBuffer.publish(record.topic, record);
       } catch (error) {

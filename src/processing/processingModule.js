@@ -125,7 +125,7 @@ class ProcessingModule extends EventEmitter {
     let tLastProcess = Date.now();
     let msFrequency = 1000 / this.processingMode.frequency.hertz;
 
-    let processingPass = () => {
+    let processingPass = async () => {
       // timing
       let tNow = Date.now();
       let deltaTime = tNow - tLastProcess;
@@ -133,7 +133,7 @@ class ProcessingModule extends EventEmitter {
 
       // processing
       let inputs = this.readAllInputData();
-      let { outputs, state } = this.onProcessing(deltaTime, inputs, this.state);
+      let { outputs, state } = await this.onProcessing(deltaTime, inputs, this.state);
       this.writeAllOutputData(outputs);
       this.state = state ? state : this.state;
 
@@ -154,7 +154,7 @@ class ProcessingModule extends EventEmitter {
 
     let tLastProcess = Date.now();
 
-    let processingPass = () => {
+    let processingPass = async () => {
       // timing
       let tNow = Date.now();
       let deltaTime = tNow - tLastProcess;
@@ -173,10 +173,10 @@ class ProcessingModule extends EventEmitter {
       }
       this.inputTriggerNames = [];
 
-      let { outputs, state } = this.onProcessing(deltaTime, inputData, this.state);
+      let results = await this.onProcessing(deltaTime, inputData, this.state);
 
-      this.writeAllOutputData(outputs);
-      this.state = state ? state : this.state;
+      results.outputs && this.writeAllOutputData(results.outputs);
+      this.state = results.state ? results.state : this.state;
     };
 
     let checkProcessingNeeded = false;
@@ -227,18 +227,9 @@ class ProcessingModule extends EventEmitter {
 
       // redefine onProcessing to be executed via workerpool
       this.originalOnProcessing = this.onProcessing;
-      let workerpoolOnProcessing = (deltaTime, inputs, state) => {
+      let workerpoolOnProcessing = async (deltaTime, inputs, state) => {
         let wpExecPromise = this.workerPool
           .exec(this.originalOnProcessing, [deltaTime, inputs, state])
-          .then((outputData) => {
-            /*this.outputs.forEach((output) => {
-              if (outputData && outputData.hasOwnProperty(output.internalName)) {
-                this.ioProxy[output.internalName] = outputData[output.internalName];
-              }
-            });*/
-            this.writeAllOutputData(outputData);
-            this.openWorkerpoolExecutions.splice(this.openWorkerpoolExecutions.indexOf(wpExecPromise), 1);
-          })
           .catch((error) => {
             if (!error.message || error.message !== 'promise cancelled') {
               // executuion was not just cancelled via workerpool API
@@ -246,6 +237,9 @@ class ProcessingModule extends EventEmitter {
             }
           });
         this.openWorkerpoolExecutions.push(wpExecPromise);
+        let results = await wpExecPromise;
+        this.openWorkerpoolExecutions.splice(this.openWorkerpoolExecutions.indexOf(wpExecPromise), 1);
+        return results;
       };
       this.onProcessing = workerpoolOnProcessing;
     } else {

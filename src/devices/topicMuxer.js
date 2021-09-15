@@ -33,6 +33,8 @@ class TopicMuxer {
   }
 
   getRecords() {
+    //console.info('Muxer.getRecords():');
+    //console.info(this.records);
     return {
       elements: this.records
     };
