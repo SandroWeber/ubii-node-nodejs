@@ -133,9 +133,13 @@ class ProcessingModule extends EventEmitter {
 
       // processing
       let inputs = this.readAllInputData();
-      let { outputs, state } = await this.onProcessing(deltaTime, inputs, this.state);
-      this.writeAllOutputData(outputs);
-      this.state = state ? state : this.state;
+      try {
+        let { outputs, state } = await this.onProcessing(deltaTime, inputs, this.state);
+        outputs && this.writeAllOutputData(outputs);
+        this.state = state ? state : this.state;
+      } catch (error) {
+        // onProcessing pass might be canceled when run on workerpool
+      }
 
       if (this.status === ProcessingModuleProto.Status.PROCESSING) {
         setTimeout(() => {
@@ -173,10 +177,13 @@ class ProcessingModule extends EventEmitter {
       }
       this.inputTriggerNames = [];
 
-      let results = await this.onProcessing(deltaTime, inputData, this.state);
-
-      results.outputs && this.writeAllOutputData(results.outputs);
-      this.state = results.state ? results.state : this.state;
+      try {
+        let { outputs, state } = await this.onProcessing(deltaTime, inputData, this.state);
+        outputs && this.writeAllOutputData(outputs);
+        this.state = state ? state : this.state;
+      } catch (error) {
+        // onProcessing pass might be canceled when run on workerpool
+      }
     };
 
     let checkProcessingNeeded = false;
