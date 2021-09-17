@@ -44,7 +44,7 @@ class ZmqDealer {
           return;
         }
       } catch (error) {
-        console.info(error);
+        console.error(error);
       }
 
       if (!this.onMessage) {

@@ -7,6 +7,7 @@ const ZmqRequest = require('../networking/zmqRequest');
 
 const ProcessingModuleManager = require('../processing/processingModuleManager');
 const ProcessingModuleStorage = require('../storage/processingModuleStorage');
+const TopicDataProxy = require('./topicDataProxy');
 
 class UbiiClientNode {
   constructor(name, masterNodeIP, masterNodeServicePort) {
@@ -17,30 +18,14 @@ class UbiiClientNode {
     //this.topicSubscriptions = new Map();
     this.topicDataRegexCallbacks = new Map();
 
-    this.topicdata = new RuntimeTopicData();
+    this.topicDataBuffer = new RuntimeTopicData();
     //TODO: for now we prevent direct publishing to local topicdata buffer
     // until smart distinguishing of topics owned by this node vs remote topics
     // is implemented
     /*this.originalTopicdataPublish = this.topicdata.publish;
     this.topicdata.publish = this.publishTopicdataReplacement;*/
 
-    this.topicdataProxy = {
-      publish: (topic, record) => {
-        let msgTopicdata = {
-          topicDataRecord: record
-        };
-        this.publishTopicdata(msgTopicdata);
-      },
-      pull: (topic) => {
-        return this.topicdata.pull(topic);
-      },
-      subscribe: async (topic, callback) => {
-        return await this.subscribeTopic(topic, callback);
-      },
-      unsubscribe: (token) => {
-        this.topicdata.unsubscribe(token);
-      }
-    };
+    this.proxyTopicData = new TopicDataProxy(this.topicDataBuffer, this);
   }
 
   get id() {
@@ -72,21 +57,23 @@ class UbiiClientNode {
     });
     if (replyClientRegistration.client) {
       this.clientSpecification = replyClientRegistration.client;
+      namida.logSuccess(this.toString(), 'successfully registered at master node');
     } else {
       namida.logFailure('UbiiNode.initialize()', 'client registration failed');
       return;
     }
 
-    console.info(this.clientSpecification);
-
-    this.processingModuleManager = new ProcessingModuleManager(this.id, undefined, this.topicdataProxy);
+    this.processingModuleManager = new ProcessingModuleManager(this.id, this.proxyTopicData);
 
     this.connectTopicdataSocket();
 
-    await this.subscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.START_SESSION, (record) => {
+    await this.proxyTopicData.proxySubscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.START_SESSION, (record) => {
       this._onStartSession(record.session);
     });
-    await this.subscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.STOP_SESSION, (record) => {
+    /*await this.proxyTopicData.proxySubscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.NEW_SESSION, (record) => {
+      this._onNewSession(record.session);
+    });*/
+    await this.proxyTopicData.proxySubscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.STOP_SESSION, (record) => {
       this._onStopSession(record.session);
     });
   }
@@ -116,25 +103,55 @@ class UbiiClientNode {
   }
 
   _onTopicDataMessageReceived(messageBuffer) {
-    try {
-      let topicdata = this.translatorTopicData.createMessageFromBuffer(messageBuffer);
-      if (!topicdata) {
-        namida.logFailure('Ubii node', 'could not parse topic data message from buffer');
-        return;
-      }
-
-      let records = topicdata.topicDataRecordList ? topicdata.topicDataRecordList.elements : [];
-      if (topicdata.topicDataRecord) records.push(topicdata.topicDataRecord);
-
-      records.forEach((record) => {
-        this.topicdata.publish(record.topic, record);
-      });
-    } catch (error) {
-      namida.logFailure('Ubii node', error);
+    let topicdataMsg = this.translatorTopicData.createPayloadFromBuffer(messageBuffer);
+    if (!topicdataMsg) {
+      namida.logFailure('TopicData received', 'could not parse topic data message from buffer');
+      return;
     }
+
+    let records = topicdataMsg.topicDataRecordList ? topicdataMsg.topicDataRecordList.elements : [];
+    if (topicdataMsg.topicDataRecord) records.push(topicdataMsg.topicDataRecord);
+
+    records.forEach((record) => {
+      try {
+        this.topicDataBuffer.publish(record.topic, record);
+      } catch (error) {
+        namida.logFailure('TopicData received', 'topic "' + record.topic + '"\n' + error);
+      }
+    });
   }
 
   async _onStartSession(msgSession) {
+    let localPMs = [];
+    //TODO: after adding PM_RUNTIME_START to msg-formats, clean split between "_onNewSession" and "_onStartSession"
+    msgSession.processingModules.forEach((pm) => {
+      if (pm.nodeId === this.id) {
+        let newModule = this.processingModuleManager.createModule(pm);
+        if (newModule) localPMs.push(newModule);
+      }
+    });
+
+    await this.processingModuleManager.applyIOMappings(msgSession.ioMappings, msgSession.id);
+
+    for (let pm of localPMs) {
+      await this.processingModuleManager.startModule(pm);
+    }
+
+    let pmRuntimeAddRequest = {
+      topic: DEFAULT_TOPICS.SERVICES.PM_RUNTIME_ADD,
+      processingModuleList: {
+        elements: localPMs.map((pm) => {
+          return pm.toProtobuf();
+        })
+      }
+    };
+    let response = await this.callService(pmRuntimeAddRequest);
+    if (response.error) {
+      namida.logFailure('Start Session Error', response.error);
+    }
+  }
+
+  /*async _onNewSession(msgSession) {
     let localPMs = [];
     msgSession.processingModules.forEach((pm) => {
       if (pm.nodeId === this.id) {
@@ -154,13 +171,13 @@ class UbiiClientNode {
     let response = await this.callService(pmRuntimeAddRequest);
 
     if (response.success) {
-      this.processingModuleManager.applyIOMappings(msgSession.ioMappings, msgSession.id);
+      await this.processingModuleManager.applyIOMappings(msgSession.ioMappings, msgSession.id);
 
       localPMs.forEach((pm) => {
         this.processingModuleManager.startModule(pm);
       });
     }
-  }
+  }*/
 
   async _onStopSession(msgSession) {
     this.processingModuleManager.processingModules.forEach((pm) => {
@@ -175,7 +192,7 @@ class UbiiClientNode {
     return new Promise(async (resolve, reject) => {
       try {
         let buffer = this.serviceRequestTranslator.createBufferFromPayload(request);
-        await this.zmqRequest.sendRequest(buffer, (response) => {
+        this.zmqRequest.sendRequest(buffer, (response) => {
           let reply = this.serviceReplyTranslator.createMessageFromBuffer(response);
           resolve(reply);
         });
@@ -186,232 +203,21 @@ class UbiiClientNode {
   }
 
   /**
-   * Subscribe a callback to a given topic.
-   * @param {string} topic
-   * @param {function} callback
-   *
-   * @returns {object} Subscription token, save to later unsubscribe
-   */
-  subscribeTopic(topic, callback) {
-    return new Promise(async (resolve, reject) => {
-      let subscriptions = this.topicdata.getSubscriptionTokens(topic);
-      if (!subscriptions || subscriptions.length === 0) {
-        let message = {
-          topic: DEFAULT_TOPICS.SERVICES.TOPIC_SUBSCRIPTION,
-          topicSubscription: {
-            clientId: this.id,
-            subscribeTopics: [topic]
-          }
-        };
-
-        try {
-          let replySubscribe = await this.callService(message);
-          if (replySubscribe.error) {
-            return reject(replySubscribe.error);
-          }
-        } catch (error) {
-          namida.logFailure('Ubii Node', error);
-          return reject(error);
-        }
-      }
-
-      let token = this.topicdata.subscribe(topic, (record) => {
-        callback(record);
-      });
-
-      /*let callbacks = this.topicSubscriptions.get(topic);
-      if (callbacks && callbacks.length > 0) {
-        callbacks.push(callback);
-      } else {
-        this.topicSubscriptions.set(topic, [token]);
-      }*/
-      resolve(token);
-    });
-  }
-
-  /**
-   * Unsubscribe a given callback from a given topic.
-   * @param {object} subscriptionToken - the token returned upon successful subscription
-   */
-  unsubscribeTopic(subscriptionToken) {
-    return new Promise(async (resolve, reject) => {
-      let topic = subscriptionToken.topic;
-      this.topicdata.unsubscribe(subscriptionToken);
-
-      let subscriptions = this.topicdata.getSubscriptionTokens(topic);
-      if (!subscriptions || subscriptions.length === 0) {
-        let message = {
-          topic: DEFAULT_TOPICS.SERVICES.TOPIC_SUBSCRIPTION,
-          topicSubscription: {
-            clientId: this.id,
-            unsubscribeTopics: [topic]
-          }
-        };
-
-        try {
-          let reply = await this.callService(message);
-          if (reply.error) {
-            return reject(reply.error);
-          }
-        } catch (error) {
-          namida.logFailure('Ubii Node', error);
-          return reject(error);
-        }
-      }
-
-      resolve(true);
-
-      /*let tokens = this.topicSubscriptions.get(topic);
-    if (tokens && tokens.length > 0) {
-      if (!subscriptionToken) {
-        this.topicSubscriptions.delete(topic);
-      } else {
-        let index = tokens.indexOf(subscriptionToken);
-        if (index !== -1) tokens.splice(index, 1);
-      }
-    }
-
-    if (tokens && tokens.length === 0) {
-      this.topicSubscriptions.delete(topic);
-
-      let message = {
-        topic: DEFAULT_TOPICS.SERVICES.TOPIC_SUBSCRIPTION,
-        topicSubscription: {
-          clientId: this.clientSpecification.id,
-          unsubscribeTopics: [topic]
-        }
-      };
-      let response = await this.callService(message);
-      if (response.success) {
-        return true;
-      } else {
-        return false;
-      }
-    }
-
-    return true;*/
-    });
-  }
-
-  /**
-   * Subscribe to the specified regex.
-   * @param {*} regexString
-   * @param {*} callback
-   */
-  async subscribeRegex(regexString, callback) {
-    // already subscribed to regexString, add callback to list
-    let registeredRegex = this.topicDataRegexCallbacks.get(regexString);
-    if (registeredRegex) {
-      if (registeredRegex.callbacks && Array.isArray(registeredRegex.callbacks)) {
-        registeredRegex.callbacks.push(callback);
-      } else {
-        registeredRegex.callbacks = [callback];
-      }
-    }
-    // need to subscribe at backend
-    else {
-      let message = {
-        topic: DEFAULT_TOPICS.SERVICES.TOPIC_SUBSCRIPTION,
-        topicSubscription: {
-          clientId: this.clientSpecification.id,
-          subscribeTopicRegexp: [regexString]
-        }
-      };
-
-      try {
-        let reply = await this.callService(message);
-        if (reply.success !== undefined && reply.success !== null) {
-          let newRegex = {
-            callbacks: [callback],
-            regex: new RegExp(regexString)
-          };
-          this.topicDataRegexCallbacks.set(regexString, newRegex);
-        } else {
-          // another component subscribed in the meantime?
-          let registeredRegex = this.topicDataRegexCallbacks.get(regexString);
-          if (registeredRegex && registeredRegex.callbacks.length > 0) {
-            registeredRegex.callbacks.push(callback);
-          } else {
-            console.error('ClientNodeWeb - could not subscribe to regex ' + regexString + ', response:\n' + reply);
-            return false;
-          }
-        }
-      } catch (error) {
-        console.error('ClientNodeWeb - subscribeRegex(' + regexString + ') failed: \n' + error);
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /**
-   * Unsubscribe from the specified regex.
-   * @param {*} regexString
-   * @param {*} callback
-   */
-  async unsubscribeRegex(regexString, callback) {
-    let registeredRegex = this.topicDataRegexCallbacks.get(regexString);
-    if (registeredRegex === undefined) {
-      return false;
-    }
-
-    // remove callback from list of callbacks
-    let index = registeredRegex.callbacks.indexOf(callback);
-    if (index >= 0) {
-      registeredRegex.callbacks.splice(index, 1);
-    }
-
-    // if no callbacks left, unsubscribe at backend
-    if (registeredRegex.callbacks.length === 0) {
-      let message = {
-        topic: DEFAULT_TOPICS.SERVICES.TOPIC_SUBSCRIPTION,
-        topicSubscription: {
-          clientId: this.clientSpecification.id,
-          unsubscribeTopicRegexp: [regexString]
-        }
-      };
-
-      try {
-        let reply = await this.callService(message);
-        if (reply.success !== undefined && reply.success !== null) {
-          this.topicDataRegexCallbacks.delete(regexString);
-        } else {
-          console.error('ClientNodeWeb - could not unsubscribe from regex ' + regexString + ', response:\n' + reply);
-          return false;
-        }
-      } catch (error) {
-        console.error('ClientNodeWeb - unsubscribeRegex(' + regexString + ') failed: \n' + error);
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  /**
-   * Publish some TopicData.
-   * @param {ubii.topicData.TopicData} topicData
-   */
-  publishTopicdata(topicData) {
-    let buffer = this.translatorTopicData.createBufferFromPayload(topicData);
-
-    this.zmqDealer.send(buffer);
-    //TODO: as soon as master node has smart distinction of topic ownership for clients and will not send back
-    // topic data to clients that published it we can publish on local topic data here as well
-  }
-
-  /**
    * Generate a timestamp for topic data.
    */
   generateTimestamp() {
-    let now = Date.now();
-    let seconds = Math.floor(now / 1000);
-    let nanos = (now - seconds * 1000) * 1000000;
-    return {
-      seconds: seconds,
-      nanos: nanos
-    };
+    return { millis: Date.now() };
+  }
+
+  toString() {
+    let output = this.name;
+    if (this.clientSpecification && this.clientSpecification.id) {
+      output += ' (ID ' + this.clientSpecification.id + ')';
+    } else {
+      output += ' (no ID, unregistered)';
+    }
+
+    return output;
   }
 }
 
