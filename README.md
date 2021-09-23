@@ -2,4 +2,6 @@
 
 ### start a client node
 
-´´´npm start´´´
+```
+npm stat
+```
