@@ -89,21 +89,21 @@ class ProcessingModuleManager extends EventEmitter {
     return true;
   }
 
-  removeModule(pm) {
-    if (!pm.id) {
-      namida.logFailure('ProcessingModuleManager', 'module ' + pm.name + " does not have an ID, can't remove");
+  removeModule(pmSpecs) {
+    if (!pmSpecs.id) {
+      namida.logFailure('ProcessingModuleManager', 'module ' + pmSpecs.name + " does not have an ID, can't remove");
       return false;
     }
 
-    if (this.pmTopicSubscriptions.has(pm.id)) {
-      let subscriptionTokens = this.pmTopicSubscriptions.get(pm.id);
+    if (this.pmTopicSubscriptions.has(pmSpecs.id)) {
+      let subscriptionTokens = this.pmTopicSubscriptions.get(pmSpecs.id);
       subscriptionTokens.forEach((token) => {
         this.topicData.unsubscribe(token);
       });
-      this.pmTopicSubscriptions.delete(pm.id);
+      this.pmTopicSubscriptions.delete(pmSpecs.id);
     }
 
-    this.processingModules.delete(pm.id);
+    this.processingModules.delete(pmSpecs.id);
   }
 
   hasModuleID(id) {
@@ -158,11 +158,13 @@ class ProcessingModuleManager extends EventEmitter {
     let pm = this.processingModules.get(pmSpec.id);
     await pm.initialized;
     pm && pm.start();
+    this.emit(ProcessingModuleManager.EVENTS.PM_STARTED, pmSpec);
   }
 
-  stopModule(pmSpec) {
+  async stopModule(pmSpec) {
     let pm = this.processingModules.get(pmSpec.id);
-    pm && pm.stop();
+    pm && (await pm.stop());
+    this.emit(ProcessingModuleManager.EVENTS.PM_STOPPED, pmSpec);
     let subs = this.pmTopicSubscriptions.get(pmSpec.id);
     subs &&
       subs.forEach((token) => {
@@ -170,20 +172,20 @@ class ProcessingModuleManager extends EventEmitter {
       });
   }
 
-  startSessionModules(session) {
-    this.processingModuleManager.processingModules.forEach((pm) => {
+  async startAllSessionModules(session) {
+    for (let pm of this.processingModules) {
       if (pm.sessionId === session.id) {
-        pm.start();
+        await this.startModule({id: pm.id});
       }
-    });
+    }
   }
 
-  stopSessionModules(session) {
-    this.processingModuleManager.processingModules.forEach((pm) => {
+  async stopAllSessionModules(session) {
+    for (let pm of this.processingModules) {
       if (pm.sessionId === session.id) {
-        pm.stop();
+        await this.stopModule({id: pm.id});
       }
-    });
+    }
   }
 
   /* I/O <-> topic mapping functions */
@@ -443,7 +445,8 @@ class ProcessingModuleManager extends EventEmitter {
 }
 
 ProcessingModuleManager.EVENTS = Object.freeze({
-  PM_STARTED: 'PM_STARTED'
+  PM_STARTED: 'PM_STARTED',
+  PM_STOPPED: 'PM_STOPPED'
 });
 
 module.exports = ProcessingModuleManager;
