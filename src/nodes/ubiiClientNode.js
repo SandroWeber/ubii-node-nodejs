@@ -147,7 +147,7 @@ class UbiiClientNode {
     };
     let response = await this.callService(pmRuntimeAddRequest);
     if (response.error) {
-      namida.logFailure('Start Session Error', response.error);
+      namida.logFailure('PM_RUNTIME_ADD error', response.error);
     }
   }
 
@@ -180,12 +180,26 @@ class UbiiClientNode {
   }*/
 
   async _onStopSession(msgSession) {
-    this.processingModuleManager.processingModules.forEach((pm) => {
-      if (pm.sessionId === msgSession.id) {
-        this.processingModuleManager.stopModule(pm);
-        this.processingModuleManager.removeModule(pm);
+    let pmsRemoved = [];
+    for(let pm of this.processingModuleManager.processingModules.values()) {
+      let pmSpecs = pm.toProtobuf();
+      if (pmSpecs.sessionId === msgSession.id) {
+        await this.processingModuleManager.stopModule(pmSpecs);
+        this.processingModuleManager.removeModule(pmSpecs);
+        pmsRemoved.push(pmSpecs);
       }
-    });
+    }
+
+    let pmRuntimeRemoveRequest = {
+      topic: DEFAULT_TOPICS.SERVICES.PM_RUNTIME_REMOVE,
+      processingModuleList: {
+        elements: pmsRemoved
+      }
+    };
+    let response = await this.callService(pmRuntimeRemoveRequest);
+    if (response.error) {
+      namida.logFailure('PM_RUNTIME_REMOVE error', response.error);
+    }
   }
 
   callService(request) {

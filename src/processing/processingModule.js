@@ -97,12 +97,12 @@ class ProcessingModule extends EventEmitter {
     return false;
   }
 
-  stop() {
+  async stop() {
     if (this.status === ProcessingModuleProto.Status.HALTED) {
-      return;
+      return false;
     }
 
-    this.onHalted && this.onHalted();
+    this.onHalted && (await this.onHalted());
     this.status = ProcessingModuleProto.Status.HALTED;
 
     this.removeAllListeners(ProcessingModule.EVENTS.NEW_INPUT);
@@ -117,6 +117,8 @@ class ProcessingModule extends EventEmitter {
     }
 
     namida.logSuccess(this.toString(), 'stopped');
+
+    return true;
   }
 
   startProcessingByFrequency() {

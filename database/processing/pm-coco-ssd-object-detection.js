@@ -41,18 +41,18 @@ class PMCoCoSSDObjectDetection extends ProcessingModule {
     this.state.model = await cocoSsd.load();
   }
 
-  async onProcessing(deltaTime, inputs, outputs, state) {
+  async onProcessing(deltaTime, inputs, state) {
     let image = this.image;
     if (image && this.state.model) {
       // make predictions
       let tfPredictions = await this.predict(image);
       // generate output list
-      let output = {
+      let outputs = {
         predictions: { elements: [] }
       };
       tfPredictions.forEach((prediction) => {
         let pos = { x: prediction.bbox[0] / image.width, y: prediction.bbox[1] / image.height };
-        output.predictions.elements.push({
+        outputs.predictions.elements.push({
           id: prediction.class,
           pose: { position: pos },
           size: { x: prediction.bbox[2] / image.width, y: prediction.bbox[3] / image.height }
@@ -60,8 +60,8 @@ class PMCoCoSSDObjectDetection extends ProcessingModule {
       });
 
       // write output
-      this.predictions = output.predictions;
-      return output;
+      this.predictions = outputs.predictions;
+      return { outputs };
     }
   }
 
