@@ -13,7 +13,7 @@ class ProcessingModule extends EventEmitter {
 
     // take over specs
     //TODO: refactor to this.specs = specs and getters
-    specs && Object.assign(this, specs);
+    this.protoSpecs = specs;
     // new instance is getting new ID
     this.id = this.id || uuidv4();
     this.inputs = this.inputs || [];
@@ -474,10 +474,111 @@ class ProcessingModule extends EventEmitter {
   }
 
   toProtobuf() {
-    return this.translatorProtobuf.createMessageFromPayload(this);
+    return this.protoSpecs;
   }
 
   /* helper functions end */
+
+  /* proto get/set start */
+  
+  get id() {
+    return this.protoSpecs.id;
+  }
+  set id(value) {
+    this.protoSpecs.id = value;
+  }
+  get name() {
+    return this.protoSpecs.name;
+  }
+  set name(value) {
+    this.protoSpecs.name = value;
+  }
+  get authors() {
+    return this.protoSpecs.authors;
+  }
+  set authors(value) {
+    this.protoSpecs.authors = value;
+  }
+  get tags() {
+    return this.protoSpecs.tags;
+  }
+  set tags(value) {
+    this.protoSpecs.tags = value;
+  }
+  get description() {
+    return this.protoSpecs.description;
+  }
+  set description(value) {
+    this.protoSpecs.description = value;
+  }
+  get nodeId() {
+    return this.protoSpecs.nodeId;
+  }
+  set nodeId(value) {
+    this.protoSpecs.nodeId = value;
+  }
+  get sessionId() {
+    return this.protoSpecs.sessionId;
+  }
+  set sessionId(value) {
+    this.protoSpecs.sessionId = value;
+  }
+  get status() {
+    return this.protoSpecs.status;
+  }
+  set status(value) {
+    this.protoSpecs.status = value;
+  }
+  get processingMode() {
+    return this.protoSpecs.processingMode;
+  }
+  set processingMode(value) {
+    this.protoSpecs.processingMode = value;
+  }
+  get inputs() {
+    return this.protoSpecs.inputs;
+  }
+  set inputs(value) {
+    this.protoSpecs.inputs = value;
+  }
+  get outputs() {
+    return this.protoSpecs.outputs;
+  }
+  set outputs(value) {
+    this.protoSpecs.outputs = value;
+  }
+  get language() {
+    return this.protoSpecs.language;
+  }
+  set language(value) {
+    this.protoSpecs.language = value;
+  }
+  get onProcessingStringified() {
+    return this.protoSpecs.onProcessingStringified;
+  }
+  set onProcessingStringified(value) {
+    this.protoSpecs.onProcessingStringified = value;
+  }
+  get onCreatedStringified () {
+    return this.protoSpecs.onCreatedStringified;
+  }
+  set onCreatedStringified(value) {
+    this.protoSpecs.onCreatedStringified = value;
+  }
+  get onHaltedStringified () {
+    return this.protoSpecs.onHaltedStringified;
+  }
+  set onHaltedStringified(value) {
+    this.protoSpecs.onHaltedStringified = value;
+  }
+  get onDestroyedStringified () {
+    return this.protoSpecs.onDestroyedStringified;
+  }
+  set onDestroyedStringified(value) {
+    this.protoSpecs.onDestroyedStringified = value;
+  }
+
+  /* proto get/set end */
 }
 
 ProcessingModule.EVENTS = Object.freeze({
