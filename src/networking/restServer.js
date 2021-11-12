@@ -63,6 +63,8 @@ class RESTServer {
       if (validOrigin) {
         res.header('Access-Control-Allow-Origin', req.headers.origin);
         res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+      } else {
+        console.warn('Request from "' + req.headers.origin + '" is not in the list of allowed origins');
       }
 
       next();
