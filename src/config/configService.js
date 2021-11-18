@@ -18,6 +18,8 @@ class ConfigService {
     }
     if (fs.existsSync('./config.json')) {
       this.config = JSON.parse(fs.readFileSync('./config.json'));
+    } else {
+      console.error('config.json missing!');
     }
   }
 
