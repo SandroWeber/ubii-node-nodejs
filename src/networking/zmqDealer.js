@@ -1,7 +1,6 @@
 const zmq = require('zeromq');
 
-const MSG_PING = 'PING';
-const MSG_PONG = 'PONG';
+const { PING_MESSAGE, PONG_MESSAGE } = require('./constants');
 
 class ZmqDealer {
   /**
@@ -38,8 +37,8 @@ class ZmqDealer {
     // add callbacks
     this.socket.on('message', (envelope, payload) => {
       try {
-        if (payload.toString() === MSG_PING) {
-          let bytes = Buffer.from(MSG_PONG);
+        if (payload.toString() === PING_MESSAGE) {
+          let bytes = Buffer.from(PONG_MESSAGE);
           this.send(bytes);
           return;
         }

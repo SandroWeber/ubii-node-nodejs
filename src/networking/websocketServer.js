@@ -78,7 +78,7 @@ class WebsocketServer {
     this.clients.set(clientID, websocket);
 
     websocket.on('message', (message) => {
-      if (message === PONG_MESSAGE) {
+      if (message.toString() === PONG_MESSAGE) {
         // Check if callback for pong device
         if (this.waitingPongCallbacks.has(clientID)) {
           // call callback
