@@ -18,7 +18,15 @@ class ConfigService {
       throw new Error('Use ' + this.constructor.name + '.instance');
     }
 
-    let pathConfig = path.join(process.argv[1], '../../config.json').normalize();
+    let appRoot = __dirname;
+    if (appRoot.includes('/node_modules')) {
+      appRoot = appRoot.substring(0, appRoot.search('/node_modules*'));
+    }
+    if (appRoot.includes('/scripts')) {
+      appRoot = appRoot.substring(0, appRoot.search('/scripts*'));
+    }
+    let pathConfig = path.join(appRoot, 'config.json').normalize();
+    
     if (fs.existsSync(pathConfig)) {
       this.config = JSON.parse(fs.readFileSync(pathConfig));
     } else {
