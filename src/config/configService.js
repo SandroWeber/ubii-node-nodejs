@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 
 let _instance = null;
 const SINGLETON_ENFORCER = Symbol();
@@ -16,10 +17,20 @@ class ConfigService {
     if (enforcer !== SINGLETON_ENFORCER) {
       throw new Error('Use ' + this.constructor.name + '.instance');
     }
-    if (fs.existsSync('./config.json')) {
-      this.config = JSON.parse(fs.readFileSync('./config.json'));
+
+    let appRoot = __dirname;
+    if (appRoot.includes('/node_modules')) {
+      appRoot = appRoot.substring(0, appRoot.search('/node_modules*'));
+    }
+    if (appRoot.includes('/scripts')) {
+      appRoot = appRoot.substring(0, appRoot.search('/scripts*'));
+    }
+    let pathConfig = path.join(appRoot, 'config.json').normalize();
+    
+    if (fs.existsSync(pathConfig)) {
+      this.config = JSON.parse(fs.readFileSync(pathConfig));
     } else {
-      console.error('config.json missing!');
+      console.error('config.json not found! Expected to be at "' + pathConfig + '".');
     }
   }
 
