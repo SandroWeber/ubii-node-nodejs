@@ -69,9 +69,19 @@ class RESTServer {
 
     // CORS
     this.app.use((req, res, next) => {
-      //TODO: C# HttpClient doesn't define origin, use host instead?
-      let validOrigin = this.allowedOrigins.some((allowed) => allowed.test(req.headers.origin));
-      if (validOrigin) {
+      let allowed = false;
+      if (!req.headers.origin && !req.headers.host) {
+        console.error('Request missing origin and host, ignoring it.');
+        return;
+      }
+
+      if (req.headers.origin) {
+        allowed = this.allowedOrigins.some((originRegex) => originRegex.test(req.headers.origin));
+      } else if (req.headers.host) {
+        allowed = this.allowedHosts.some((hostRegex) => hostRegex.test(req.headers.host));
+      }
+
+      if (allowed) {
         res.header('Access-Control-Allow-Origin', req.headers.origin);
         res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
       } else {
