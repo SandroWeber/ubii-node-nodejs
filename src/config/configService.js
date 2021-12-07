@@ -19,11 +19,11 @@ class ConfigService {
     }
 
     let appRoot = __dirname;
-    if (appRoot.includes('/node_modules')) {
-      appRoot = appRoot.substring(0, appRoot.search('/node_modules*'));
+    if (appRoot.includes('node_modules')) {
+      appRoot = appRoot.substring(0, appRoot.search('node_modules*'));
     }
-    if (appRoot.includes('/scripts')) {
-      appRoot = appRoot.substring(0, appRoot.search('/scripts*'));
+    if (appRoot.includes('scripts')) {
+      appRoot = appRoot.substring(0, appRoot.search('scripts*'));
     }
     let pathConfig = path.join(appRoot, 'config.json').normalize();
     

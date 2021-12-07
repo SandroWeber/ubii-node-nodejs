@@ -32,6 +32,17 @@ class RESTServer {
     ]);
     this.allowedOrigins = this.allowedOrigins.map((string) => new RegExp(string));
 
+    this.allowedHosts = ConfigService.instance.getAllowedHosts();
+    this.allowedHosts = this.allowedHosts.concat([
+      ipLan + ':8080',
+      ipLan + ':8081',
+      ipWifi + ':8080',
+      ipWifi + ':8081',
+      'localhost:8080',
+      'localhost:8081'
+    ]);
+    this.allowedHosts = this.allowedHosts.map((string) => new RegExp(string));
+
     this.ready = false;
 
     if (autoBind) {
