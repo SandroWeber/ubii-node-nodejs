@@ -62,6 +62,10 @@ class ConfigService {
     return this.config.https.allowedOrigins;
   }
 
+  getAllowedHosts() {
+    return this.config.allowedHosts;
+  }
+
   getPortServiceZMQ() {
     return typeof this.config.ports.serviceZMQ !== 'undefined'
       ? this.config.ports.serviceZMQ
