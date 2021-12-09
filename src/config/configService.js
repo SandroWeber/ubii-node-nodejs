@@ -18,13 +18,7 @@ class ConfigService {
       throw new Error('Use ' + this.constructor.name + '.instance');
     }
 
-    let appRoot = __dirname;
-    if (appRoot.includes('node_modules')) {
-      appRoot = appRoot.substring(0, appRoot.search('node_modules*'));
-    }
-    if (appRoot.includes('scripts')) {
-      appRoot = appRoot.substring(0, appRoot.search('scripts*'));
-    }
+    let appRoot = this.getRootPath();
     let pathConfig = path.join(appRoot, 'config.json').normalize();
     
     if (fs.existsSync(pathConfig)) {
@@ -47,15 +41,15 @@ class ConfigService {
   }
 
   getPathCertificate() {
-    return this.config.https.pathCert;
+    return path.join(this.getRootPath(), this.config.https.pathCert).normalize();
   }
 
   getPathPrivateKey() {
-    return this.config.https.pathPrivateKey;
+    return path.join(this.getRootPath(), this.config.https.pathPrivateKey).normalize();
   }
 
   getPathPublicKey() {
-    return this.config.https.pathPublicKey;
+    return path.join(this.getRootPath(), this.config.https.pathPublicKey).normalize();
   }
 
   getAllowedOrigins() {
@@ -88,6 +82,18 @@ class ConfigService {
     return typeof this.config.ports.topicdataWS !== 'undefined'
       ? this.config.ports.topicdataWS
       : DEFAULT_PORT_TOPICDATA_WS;
+  }
+
+  getRootPath() {
+    let appRoot = __dirname;
+    if (appRoot.includes('node_modules')) {
+      appRoot = appRoot.substring(0, appRoot.search('node_modules*'));
+    }
+    if (appRoot.includes('scripts')) {
+      appRoot = appRoot.substring(0, appRoot.search('scripts*'));
+    }
+
+    return appRoot;
   }
 }
 
