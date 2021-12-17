@@ -20,7 +20,7 @@ class ConfigService {
 
     let appRoot = this.getRootPath();
     let pathConfig = path.join(appRoot, 'config.json').normalize();
-    
+
     if (fs.existsSync(pathConfig)) {
       this.config = JSON.parse(fs.readFileSync(pathConfig));
     } else {
@@ -41,15 +41,29 @@ class ConfigService {
   }
 
   getPathCertificate() {
-    return path.join(this.getRootPath(), this.config.https.pathCert).normalize();
+    if (this.config.https && this.config.https.pathCert) {
+      return this.getFullFilePath(this.config.https.pathCert);
+    }
   }
 
   getPathPrivateKey() {
-    return path.join(this.getRootPath(), this.config.https.pathPrivateKey).normalize();
+    if (this.config.https && this.config.https.pathPrivateKey) {
+      return this.getFullFilePath(this.config.https.pathPrivateKey);
+    }
   }
 
   getPathPublicKey() {
-    return path.join(this.getRootPath(), this.config.https.pathPublicKey).normalize();
+    if (this.config.https && this.config.https.pathPublicKey) {
+      return this.getFullFilePath(this.config.https.pathPublicKey);
+    }
+  }
+
+  getFullFilePath(pathRelativeOrAbsolute) {
+    if (path.isAbsolute(pathRelativeOrAbsolute)) {
+      return path.join(pathRelativeOrAbsolute, '');
+    } else {
+      return path.join(this.getRootPath(), pathRelativeOrAbsolute);
+    }
   }
 
   getAllowedOrigins() {

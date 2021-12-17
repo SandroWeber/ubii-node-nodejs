@@ -18,29 +18,10 @@ class RESTServer {
   constructor(port = 5555, autoBind = true) {
     this.port = port;
 
-    let ipLan = NetworkConfigManager.instance.hostAdresses.ethernet;
-    let ipWifi = NetworkConfigManager.instance.hostAdresses.wifi;
-
     this.allowedOrigins = ConfigService.instance.getAllowedOrigins();
-    this.allowedOrigins = this.allowedOrigins.concat([
-      'http://' + ipLan + ':8080',
-      'http://' + ipLan + ':8081',
-      'http://' + ipWifi + ':8080',
-      'http://' + ipWifi + ':8081',
-      'http://localhost:8080',
-      'http://localhost:8081'
-    ]);
     this.allowedOrigins = this.allowedOrigins.map((string) => new RegExp(string));
 
     this.allowedHosts = ConfigService.instance.getAllowedHosts();
-    this.allowedHosts = this.allowedHosts.concat([
-      ipLan + ':8080',
-      ipLan + ':8081',
-      ipWifi + ':8080',
-      ipWifi + ':8081',
-      'localhost:8080',
-      'localhost:8081'
-    ]);
     this.allowedHosts = this.allowedHosts.map((string) => new RegExp(string));
 
     this.ready = false;
@@ -57,9 +38,13 @@ class RESTServer {
     if (ConfigService.instance.useHTTPS()) {
       var credentials = {
         //ca: [fs.readFileSync(PATH_TO_BUNDLE_CERT_1), fs.readFileSync(PATH_TO_BUNDLE_CERT_2)],
-        cert: fs.readFileSync(ConfigService.instance.getPathCertificate()),
         key: fs.readFileSync(ConfigService.instance.getPathPrivateKey())
       };
+      let certificatePath = ConfigService.instance.getPathCertificate();
+      if (certificatePath) {
+        credentials.cert = fs.readFileSync(ConfigService.instance.getPathCertificate());
+      }
+
       this.server = https.createServer(credentials, this.app);
       this.endpoint = 'https://*:' + this.port;
     } else {
