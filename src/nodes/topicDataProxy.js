@@ -150,8 +150,12 @@ class TopicDataProxy {
    */
   proxyPublish(topicData) {
     //TODO: this should be refactored
-    let buffer = this.ubiiNode.translatorTopicData.createBufferFromPayload(topicData);
-    this.ubiiNode.zmqDealer.send(buffer);
+    try {
+      let buffer = this.ubiiNode.translatorTopicData.createBufferFromPayload(topicData);
+      this.ubiiNode.zmqDealer.send(buffer);
+    } catch (error) {
+      namida.logFailure('TopicDataProxy', 'failed to send data: ' + error);
+    }
 
     //TODO: as soon as master node has smart distinction of topic ownership for clients and will not send back
     // topic data to clients that published it we can publish on local topic data here as well
