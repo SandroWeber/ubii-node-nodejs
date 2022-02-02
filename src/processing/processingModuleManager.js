@@ -248,8 +248,7 @@ class ProcessingModuleManager extends EventEmitter {
       // single topic input
       if (!isTopicMuxer) {
         inputGetterCallback = () => {
-          let entry = topicDataBuffer.pull(topicSource);
-          return entry && entry[entry.type];
+          return topicDataBuffer.pull(topicSource);
         };
       }
       // topic muxer input
