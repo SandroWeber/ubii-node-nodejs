@@ -48,11 +48,11 @@ class PMCoCoSSDObjectDetection extends ProcessingModule {
       let tfPredictions = await this.predict(image);
       // generate output list
       let outputs = {
-        predictions: { elements: [] }
+        predictions: { object2DList: { elements: [] } }
       };
       tfPredictions.forEach((prediction) => {
         let pos = { x: prediction.bbox[0] / image.width, y: prediction.bbox[1] / image.height };
-        outputs.predictions.elements.push({
+        outputs.predictions.object2DList.elements.push({
           id: prediction.class,
           pose: { position: pos },
           size: { x: prediction.bbox[2] / image.width, y: prediction.bbox[3] / image.height }

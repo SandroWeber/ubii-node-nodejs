@@ -175,7 +175,7 @@ class ProcessingModuleManager extends EventEmitter {
   async startAllSessionModules(session) {
     for (let pm of this.processingModules) {
       if (pm.sessionId === session.id) {
-        await this.startModule({id: pm.id});
+        await this.startModule({ id: pm.id });
       }
     }
   }
@@ -183,7 +183,7 @@ class ProcessingModuleManager extends EventEmitter {
   async stopAllSessionModules(session) {
     for (let pm of this.processingModules) {
       if (pm.sessionId === session.id) {
-        await this.stopModule({id: pm.id});
+        await this.stopModule({ id: pm.id });
       }
     }
   }
@@ -332,12 +332,24 @@ class ProcessingModuleManager extends EventEmitter {
         let messageFormat = processingModule.getIOMessageFormat(outputMapping.outputName);
         let type = Utils.getTopicDataTypeFromMessageFormat(messageFormat);
 
-        processingModule.setOutputSetter(outputMapping.outputName, (value) => {
-          let record = {
-            topic: topicDestination,
-            type: type
-          };
-          record[type] = value;
+        processingModule.setOutputSetter(outputMapping.outputName, (record) => {
+          if (!record[type]) {
+            namida.logFailure(
+              processingModule.toString(),
+              'Output "' +
+                outputMapping.outputName +
+                '" (topic=' +
+                topicDestination +
+                ') returned without any value for "' +
+                type +
+                '" after processing.'
+            );
+            return;
+          }
+
+          record.topic = topicDestination;
+          record.type = type;
+          record.timestamp = Utils.generateTimestamp();
           topicDataBuffer.publish(record.topic, record);
         });
 
