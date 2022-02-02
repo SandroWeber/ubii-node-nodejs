@@ -170,19 +170,8 @@ class ProcessingModule extends EventEmitter {
         !allInputsNeedUpdate || this.inputs.every((element) => this.inputTriggerNames.includes(element.internalName));
       let minDelayFulfilled = !minDelayMs || Date.now() - this.tLastProcess >= minDelayMs;
       if (inputUpdatesFulfilled && minDelayFulfilled) {
-        if (this.processingMode.triggerOnInput) {
-          for (let inputTriggerName of this.inputTriggerNames) {
-            if (!inputData[inputTriggerName]) {
-              namida.logFailure(
-                this.toString(),
-                'input trigger for "' + inputTriggerName + '", but input data is ' + inputData[inputTriggerName]
-              );
-            } else {
-              this.state.inputTriggerNames = [...this.inputTriggerNames]; // copy those input names that received update trigger to state
-            }
-          }
-          this.inputTriggerNames = [];
-        }
+        this.state.inputTriggerNames = [...this.inputTriggerNames]; // copy those input names that received update trigger to state
+        this.inputTriggerNames = [];
 
         this.processingPass();
       }
