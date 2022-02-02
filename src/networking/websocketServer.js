@@ -35,9 +35,13 @@ class WebsocketServer {
     if (ConfigService.instance.useHTTPS()) {
       var credentials = {
         //ca: [fs.readFileSync(PATH_TO_BUNDLE_CERT_1), fs.readFileSync(PATH_TO_BUNDLE_CERT_2)],
-        cert: fs.readFileSync(ConfigService.instance.getPathCertificate()),
         key: fs.readFileSync(ConfigService.instance.getPathPrivateKey())
       };
+      let certificatePath = ConfigService.instance.getPathCertificate();
+      if (certificatePath) {
+        credentials.cert = fs.readFileSync(ConfigService.instance.getPathCertificate());
+      }
+
       this.server = https.createServer(credentials);
       this.server.listen(this.port);
       this.wsServer = new WebSocket.Server({ server: this.server });
@@ -78,7 +82,7 @@ class WebsocketServer {
     this.clients.set(clientID, websocket);
 
     websocket.on('message', (message) => {
-      if (message === PONG_MESSAGE) {
+      if (message.toString() === PONG_MESSAGE) {
         // Check if callback for pong device
         if (this.waitingPongCallbacks.has(clientID)) {
           // call callback

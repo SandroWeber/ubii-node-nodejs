@@ -18,19 +18,11 @@ class RESTServer {
   constructor(port = 5555, autoBind = true) {
     this.port = port;
 
-    let ipLan = NetworkConfigManager.instance.hostAdresses.ethernet;
-    let ipWifi = NetworkConfigManager.instance.hostAdresses.wifi;
-
     this.allowedOrigins = ConfigService.instance.getAllowedOrigins();
-    this.allowedOrigins = this.allowedOrigins.concat([
-      'http://' + ipLan + ':8080',
-      'http://' + ipLan + ':8081',
-      'http://' + ipWifi + ':8080',
-      'http://' + ipWifi + ':8081',
-      'http://localhost:8080',
-      'http://localhost:8081'
-    ]);
     this.allowedOrigins = this.allowedOrigins.map((string) => new RegExp(string));
+
+    this.allowedHosts = ConfigService.instance.getAllowedHosts();
+    this.allowedHosts = this.allowedHosts.map((string) => new RegExp(string));
 
     this.ready = false;
 
@@ -46,9 +38,13 @@ class RESTServer {
     if (ConfigService.instance.useHTTPS()) {
       var credentials = {
         //ca: [fs.readFileSync(PATH_TO_BUNDLE_CERT_1), fs.readFileSync(PATH_TO_BUNDLE_CERT_2)],
-        cert: fs.readFileSync(ConfigService.instance.getPathCertificate()),
         key: fs.readFileSync(ConfigService.instance.getPathPrivateKey())
       };
+      let certificatePath = ConfigService.instance.getPathCertificate();
+      if (certificatePath) {
+        credentials.cert = fs.readFileSync(ConfigService.instance.getPathCertificate());
+      }
+
       this.server = https.createServer(credentials, this.app);
       this.endpoint = 'https://*:' + this.port;
     } else {
@@ -58,11 +54,23 @@ class RESTServer {
 
     // CORS
     this.app.use((req, res, next) => {
+      let allowed = false;
+      if (!req.headers.origin && !req.headers.host) {
+        console.error('Request missing origin and host, ignoring it.');
+        return;
+      }
 
-      let validOrigin = this.allowedOrigins.some((allowed) => allowed.test(req.headers.origin));
-      if (validOrigin) {
+      if (req.headers.origin) {
+        allowed = this.allowedOrigins.some((originRegex) => originRegex.test(req.headers.origin));
+      } else if (req.headers.host) {
+        allowed = this.allowedHosts.some((hostRegex) => hostRegex.test(req.headers.host));
+      }
+
+      if (allowed) {
         res.header('Access-Control-Allow-Origin', req.headers.origin);
         res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+      } else {
+        console.warn('Request from "' + req.headers.origin + '" is not in the list of allowed origins');
       }
 
       next();

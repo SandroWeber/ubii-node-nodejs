@@ -29,6 +29,13 @@ class Utils {
   static isNodeJS() {
     return typeof process !== 'undefined' && process.versions != null && process.versions.node != null;
   }
+
+  /**
+   * Generate a timestamp for topic data.
+   */
+  static generateTimestamp() {
+    return { millis: Date.now() };
+  }
 }
 
 

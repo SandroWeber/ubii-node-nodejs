@@ -216,13 +216,6 @@ class UbiiClientNode {
     });
   }
 
-  /**
-   * Generate a timestamp for topic data.
-   */
-  generateTimestamp() {
-    return { millis: Date.now() };
-  }
-
   toString() {
     let output = this.name;
     if (this.clientSpecification && this.clientSpecification.id) {

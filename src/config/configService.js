@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 
 let _instance = null;
 const SINGLETON_ENFORCER = Symbol();
@@ -16,8 +17,14 @@ class ConfigService {
     if (enforcer !== SINGLETON_ENFORCER) {
       throw new Error('Use ' + this.constructor.name + '.instance');
     }
-    if (fs.existsSync('./config.json')) {
-      this.config = JSON.parse(fs.readFileSync('./config.json'));
+
+    let appRoot = this.getRootPath();
+    let pathConfig = path.join(appRoot, 'config.json').normalize();
+
+    if (fs.existsSync(pathConfig)) {
+      this.config = JSON.parse(fs.readFileSync(pathConfig));
+    } else {
+      console.error('config.json not found! Expected to be at "' + pathConfig + '".');
     }
   }
 
@@ -34,19 +41,37 @@ class ConfigService {
   }
 
   getPathCertificate() {
-    return this.config.https.pathCert;
+    if (this.config.https && this.config.https.pathCert) {
+      return this.getFullFilePath(this.config.https.pathCert);
+    }
   }
 
   getPathPrivateKey() {
-    return this.config.https.pathPrivateKey;
+    if (this.config.https && this.config.https.pathPrivateKey) {
+      return this.getFullFilePath(this.config.https.pathPrivateKey);
+    }
   }
 
   getPathPublicKey() {
-    return this.config.https.pathPublicKey;
+    if (this.config.https && this.config.https.pathPublicKey) {
+      return this.getFullFilePath(this.config.https.pathPublicKey);
+    }
+  }
+
+  getFullFilePath(pathRelativeOrAbsolute) {
+    if (path.isAbsolute(pathRelativeOrAbsolute)) {
+      return path.join(pathRelativeOrAbsolute, '');
+    } else {
+      return path.join(this.getRootPath(), pathRelativeOrAbsolute);
+    }
   }
 
   getAllowedOrigins() {
     return this.config.https.allowedOrigins;
+  }
+
+  getAllowedHosts() {
+    return this.config.allowedHosts;
   }
 
   getPortServiceZMQ() {
@@ -71,6 +96,18 @@ class ConfigService {
     return typeof this.config.ports.topicdataWS !== 'undefined'
       ? this.config.ports.topicdataWS
       : DEFAULT_PORT_TOPICDATA_WS;
+  }
+
+  getRootPath() {
+    let appRoot = __dirname;
+    if (appRoot.includes('node_modules')) {
+      appRoot = appRoot.substring(0, appRoot.search('node_modules*'));
+    }
+    if (appRoot.includes('scripts')) {
+      appRoot = appRoot.substring(0, appRoot.search('scripts*'));
+    }
+
+    return appRoot;
   }
 }
 

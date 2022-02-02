@@ -42,25 +42,23 @@ class PMCoCoSSDObjectDetection extends ProcessingModule {
   }
 
   async onProcessing(deltaTime, inputs, state) {
-    let image = this.image;
-    if (image && this.state.model) {
+    let image = inputs.image.image2D;
+    if (image && state.model) {
       // make predictions
       let tfPredictions = await this.predict(image);
       // generate output list
       let outputs = {
-        predictions: { elements: [] }
+        predictions: { object2DList: { elements: [] } }
       };
       tfPredictions.forEach((prediction) => {
         let pos = { x: prediction.bbox[0] / image.width, y: prediction.bbox[1] / image.height };
-        outputs.predictions.elements.push({
+        outputs.predictions.object2DList.elements.push({
           id: prediction.class,
           pose: { position: pos },
           size: { x: prediction.bbox[2] / image.width, y: prediction.bbox[3] / image.height }
         });
       });
 
-      // write output
-      this.predictions = outputs.predictions;
       return { outputs };
     }
   }

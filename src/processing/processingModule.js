@@ -454,7 +454,7 @@ class ProcessingModule extends EventEmitter {
 
     for (let outputSpec of this.outputs) {
       let output = outputData[outputSpec.internalName];
-      if (output) {
+      if (typeof output !== 'undefined') {
         this.ioProxy[outputSpec.internalName] = output;
       }
     }
