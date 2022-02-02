@@ -72,15 +72,17 @@ class ProcessingModule extends EventEmitter {
     if (this.workerPool) {
       this.openWorkerpoolExecutions = [];
     }
-
-    if (this.processingMode && this.processingMode.frequency) {
-      this.startProcessingByFrequency();
-    } else if (this.processingMode && this.processingMode.triggerOnInput) {
-      this.startProcessingByTriggerOnInput();
-    } else if (this.processingMode && this.processingMode.lockstep) {
-      this.startProcessingByLockstep();
-    } else if (this.processingMode === undefined) {
+    if (!this.processingMode) {
       namida.logFailure(this.toString(), 'no processing mode specified, can not start processing');
+      return false;
+    }
+
+    if (this.processingMode.frequency) {
+      this.startProcessingByFrequency();
+    } else if (this.processingMode.triggerOnInput) {
+      this.startProcessingByTriggerOnInput();
+    } else if (this.processingMode.lockstep) {
+      this.startProcessingByLockstep();
     }
 
     if (this.status === ProcessingModuleProto.Status.PROCESSING) {
@@ -122,34 +124,34 @@ class ProcessingModule extends EventEmitter {
   }
 
   startProcessingByFrequency() {
-    this.status = ProcessingModuleProto.Status.PROCESSING;
+    this.status = ProcessingModuleProto.Status.PROCESSING; //TODO: unify with other start... in start()
 
-    let tLastProcess = Date.now();
-    let msFrequency = 1000 / this.processingMode.frequency.hertz;
+    this.tLastProcess = Date.now(); //TODO: unify with other start... in start()
+    let targetFrequencyMillis = 1000 / this.processingMode.frequency.hertz;
 
-    let processingPass = async () => {
-      // timing
-      let tNow = Date.now();
-      let deltaTime = tNow - tLastProcess;
-      tLastProcess = tNow;
-
-      // processing
-      let inputs = this.readAllInputData();
-      try {
-        let { outputs, state } = await this.onProcessing(deltaTime, inputs, this.state);
-        outputs && this.writeAllOutputData(outputs);
-        this.state = state ? state : this.state;
-      } catch (error) {
-        // onProcessing pass might be canceled when run on workerpool
+    /*this.intervalProcessing = setInterval(async () => {
+      await this.processingPass();
+      if (this.status !== ProcessingModuleProto.Status.PROCESSING) {
+        this.intervalProcessing && clearInterval(this.intervalProcessing);
       }
+    }, targetFrequencyMillis);*/
 
+    let process = async () => {
+      await this.processingPass();
       if (this.status === ProcessingModuleProto.Status.PROCESSING) {
-        setTimeout(() => {
-          processingPass();
-        }, msFrequency);
+        let tRemaining = this.tLastProcess + targetFrequencyMillis - Date.now();
+        /*if (tRemaining < 0) {
+          namida.warn(
+            this.toString(),
+            'overshooting target frequency by ' +
+              Math.abs(tRemaining) +
+              ' - consider throttling down processing frequency'
+          );
+        }*/
+        setTimeout(process, tRemaining);
       }
     };
-    processingPass();
+    process();
   }
 
   startProcessingByTriggerOnInput() {
@@ -158,35 +160,7 @@ class ProcessingModule extends EventEmitter {
     let allInputsNeedUpdate = this.processingMode.triggerOnInput.allInputsNeedUpdate;
     let minDelayMs = this.processingMode.triggerOnInput.minDelayMs;
 
-    let tLastProcess = Date.now();
-
-    let processingPass = async () => {
-      // timing
-      let tNow = Date.now();
-      let deltaTime = tNow - tLastProcess;
-      tLastProcess = tNow;
-      // processing
-      let inputData = this.readAllInputData();
-      for (let inputTriggerName of this.inputTriggerNames) {
-        if (!inputData[inputTriggerName]) {
-          namida.logFailure(
-            this.toString(),
-            'input trigger for "' + inputTriggerName + '", but input data is ' + inputData[inputTriggerName]
-          );
-        } else {
-          this.state.inputTriggerNames = [...this.inputTriggerNames]; // copy those input names that received update trigger to state
-        }
-      }
-      this.inputTriggerNames = [];
-
-      try {
-        let { outputs, state } = await this.onProcessing(deltaTime, inputData, this.state);
-        outputs && this.writeAllOutputData(outputs);
-        this.state = state ? state : this.state;
-      } catch (error) {
-        // onProcessing pass might be canceled when run on workerpool
-      }
-    };
+    this.tLastProcess = Date.now();
 
     let checkProcessingNeeded = false;
     let checkProcessing = () => {
@@ -194,9 +168,23 @@ class ProcessingModule extends EventEmitter {
 
       let inputUpdatesFulfilled =
         !allInputsNeedUpdate || this.inputs.every((element) => this.inputTriggerNames.includes(element.internalName));
-      let minDelayFulfilled = !minDelayMs || Date.now() - tLastProcess >= minDelayMs;
+      let minDelayFulfilled = !minDelayMs || Date.now() - this.tLastProcess >= minDelayMs;
       if (inputUpdatesFulfilled && minDelayFulfilled) {
-        processingPass();
+        if (this.processingMode.triggerOnInput) {
+          for (let inputTriggerName of this.inputTriggerNames) {
+            if (!inputData[inputTriggerName]) {
+              namida.logFailure(
+                this.toString(),
+                'input trigger for "' + inputTriggerName + '", but input data is ' + inputData[inputTriggerName]
+              );
+            } else {
+              this.state.inputTriggerNames = [...this.inputTriggerNames]; // copy those input names that received update trigger to state
+            }
+          }
+          this.inputTriggerNames = [];
+        }
+
+        this.processingPass();
       }
       checkProcessingNeeded = false;
     };
@@ -226,6 +214,22 @@ class ProcessingModule extends EventEmitter {
         }
       });
     };
+  }
+
+  async processingPass() {
+    let tNow = Date.now();
+    let deltaTime = tNow - this.tLastProcess;
+    this.tLastProcess = tNow;
+
+    let inputData = this.readAllInputData();
+
+    try {
+      let { outputs, state } = await this.onProcessing(deltaTime, inputData, this.state);
+      outputs && this.writeAllOutputData(outputs);
+      this.state = state ? state : this.state;
+    } catch (error) {
+      // onProcessing pass might be canceled when run on workerpool
+    }
   }
 
   async setWorkerPool(workerPool) {
@@ -261,6 +265,7 @@ class ProcessingModule extends EventEmitter {
       await workerPool.exec(this.onProcessing, [1, this.readAllInputData(), this.state]);
       return true;
     } catch (error) {
+      console.error(error);
       return false;
     }
   }
@@ -294,7 +299,7 @@ class ProcessingModule extends EventEmitter {
    */
   onProcessing(deltaTime, inputs, outputs, state) {
     let errorMsg =
-      'onProcessing callback is not specified / overwritten, called with' +
+      'onProcessing callback is not specified, called with' +
       '\ndeltaTime: ' +
       deltaTime +
       '\ninputs:\n' +
