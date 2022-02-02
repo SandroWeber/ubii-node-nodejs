@@ -42,8 +42,8 @@ class PMCoCoSSDObjectDetection extends ProcessingModule {
   }
 
   async onProcessing(deltaTime, inputs, state) {
-    let image = this.image;
-    if (image && this.state.model) {
+    let image = inputs.image.image2D;
+    if (image && state.model) {
       // make predictions
       let tfPredictions = await this.predict(image);
       // generate output list
@@ -59,8 +59,6 @@ class PMCoCoSSDObjectDetection extends ProcessingModule {
         });
       });
 
-      // write output
-      this.predictions = outputs.predictions;
       return { outputs };
     }
   }
