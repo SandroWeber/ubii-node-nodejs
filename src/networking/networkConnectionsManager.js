@@ -92,8 +92,8 @@ class NetworkConnectionsManager {
     this.connections.serviceZMQ.onMessageReceived(callback);
   }
 
-  onServiceMessageREST(callback) {
-    this.connections.serviceREST.onServiceMessageReceived(callback);
+  setServiceRoute(route, callback) {
+    this.connections.serviceREST.setServiceRoute(route, callback);
   }
 
   onTopicDataMessageZMQ(callback) {
