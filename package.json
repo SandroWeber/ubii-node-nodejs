@@ -19,6 +19,7 @@
   "files": [
     "src/"
   ],
+  "main": "src/index.js",
   "dependencies": {
     "@tum-far/namida": "0.1.1",
     "@tum-far/ubii-msg-formats": "0.15.16",
