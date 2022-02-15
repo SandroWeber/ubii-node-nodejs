@@ -7,7 +7,7 @@ const { ProcessingModule } = require('../../src/processing/processingModule.js')
 class PMCoCoSSDObjectDetection extends ProcessingModule {
   static specs = {
     name: 'coco-ssd-object-detection',
-    tags: ['coco', 'ssd', 'object-detection', 'tensorflow'],
+    tags: ['image', 'image processing', 'object detection', 'coco', 'ssd', 'tensorflow'],
     description:
       'All credit goes to https://github.com/tensorflow/tfjs-models/tree/master/coco-ssd. Processes RGB8 image and returns SSD predictions.',
 
