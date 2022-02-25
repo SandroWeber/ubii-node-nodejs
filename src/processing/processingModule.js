@@ -265,7 +265,6 @@ class ProcessingModule extends EventEmitter {
       await workerPool.exec(this.onProcessing, [1, this.readAllInputData(), this.state]);
       return true;
     } catch (error) {
-      console.error(error);
       return false;
     }
   }
