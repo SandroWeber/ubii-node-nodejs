@@ -88,12 +88,12 @@ class NetworkConnectionsManager {
     checkConnectionsReady(timeoutDate);
   }
 
-  onServiceMessageZMQ(callback) {
-    this.connections.serviceZMQ.onMessageReceived(callback);
+  setServiceRouteHTTP(route, callback) {
+    this.connections.serviceREST.setServiceRoute(route, callback);
   }
 
-  setServiceRoute(route, callback) {
-    this.connections.serviceREST.setServiceRoute(route, callback);
+  onServiceMessageZMQ(callback) {
+    this.connections.serviceZMQ.onMessageReceived(callback);
   }
 
   onTopicDataMessageZMQ(callback) {
