@@ -1,8 +1,8 @@
 const UbiiClientNode = require('./nodes/ubiiClientNode');
 
 const NetworkConnectionsManager = require('./networking/networkConnectionsManager');
-const RESTClient = require('./networking/restClient');
-const RESTServer = require('./networking/restServer');
+const HTTPClient = require('./networking/httpClient');
+const HTTPServer = require('./networking/httpServer');
 const WebsocketServer = require('./networking/websocketServer');
 const ZmqDealer = require('./networking/zmqDealer');
 const ZmqReply = require('./networking/zmqReply');
@@ -20,8 +20,8 @@ const Utils = require('./utilities');
 module.exports = {
   UbiiClientNode,
   NetworkConnectionsManager,
-  RESTClient,
-  RESTServer,
+  HTTPClient: HTTPClient,
+  HTTPServer: HTTPServer,
   WebsocketServer,
   ZmqDealer,
   ZmqReply,

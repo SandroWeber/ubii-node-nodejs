@@ -5,7 +5,7 @@ const ZmqReply = require('./zmqReply');
 const ZmqRouter = require('./zmqRouter');
 
 const WebsocketServer = require('./websocketServer');
-const RESTServer = require('./restServer');
+const HTTPServer = require('./httpServer');
 
 const ConfigService = require('../config/configService');
 
@@ -40,7 +40,7 @@ class NetworkConnectionsManager {
     this.connections.serviceZMQ = new ZmqReply('tcp', '*:' + ConfigService.instance.getPortServiceZMQ());
 
     // REST Service Component:
-    this.connections.serviceREST = new RESTServer(ConfigService.instance.getPortServiceREST());
+    this.connections.serviceREST = new HTTPServer(ConfigService.instance.getPortServiceREST());
 
     // ZMQ Topic Data Component:
     this.connections.topicDataZMQ = new ZmqRouter(

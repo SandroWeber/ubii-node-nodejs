@@ -1,0 +1,11 @@
+{
+    "services": {
+        "mode": "zmq",
+        "host": "localhost",
+        "port": "8102",
+        "route": ""
+    },
+    "topicdata": {
+        "mode": 
+    }
+}

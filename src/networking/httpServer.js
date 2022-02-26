@@ -8,7 +8,7 @@ const NetworkConfigManager = require('./networkConfigManager');
 
 const ConfigService = require('../config/configService');
 
-class RESTServer {
+class HTTPServer {
   /**
    * Communication endpoint implementing the zmq reply pattern.
    * @param {*} port Port to bind.
@@ -121,4 +121,4 @@ class RESTServer {
   }
 }
 
-module.exports = RESTServer;
+module.exports = HTTPServer;
