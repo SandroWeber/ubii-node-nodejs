@@ -8,7 +8,7 @@ const NetworkConfigManager = require('./networkConfigManager');
 
 const ConfigService = require('../config/configService');
 
-class RESTServer {
+class HTTPServer {
   /**
    * Communication endpoint implementing the zmq reply pattern.
    * @param {*} port Port to bind.
@@ -23,6 +23,8 @@ class RESTServer {
 
     this.allowedHosts = ConfigService.instance.getAllowedHosts();
     this.allowedHosts = this.allowedHosts.map((string) => new RegExp(string));
+
+    this.endpointServices = [];
 
     this.ready = false;
 
@@ -78,13 +80,12 @@ class RESTServer {
 
     this.app.use(bodyParser.urlencoded({ extended: true }));
 
-    // VARIANT A: PROTOBUF
-    /*this.app.use(bodyParser.raw({
+    // VARIANT A: PROTOBUF BINARY
+    this.app.use(bodyParser.raw({
       type: 'application/octet-stream',
       limit: '10mb'
-    }));*/
-
-    /// VARIANT B: JSON
+    }));
+    /// VARIANT B: PROTOBUF JSON
     this.app.use(bodyParser.json());
 
     this.server.listen(this.port, () => {
@@ -103,9 +104,9 @@ class RESTServer {
    * @param {*} callback Callback function that is called when a new message is received.
    * Callback should accept a request parameter and a response paramter.
    */
-  onServiceMessageReceived(callback) {
-    this.setRoutePOST('/services', callback);
-    this.endpointServices = this.endpoint + '/services';
+  setServiceRoute(route, callback) {
+    this.setRoutePOST(route, callback);
+    this.endpointServices.push(this.endpoint + route);
     this.ready = true;
   }
 
@@ -116,8 +117,8 @@ class RESTServer {
   toString() {
     let status = this.ready ? 'ready' : 'not ready';
 
-    return 'REST-Server | ' + status + ' | POST service route ' + this.endpointServices;
+    return 'REST-Server | ' + status + ' | POST service route(s) ' + this.endpointServices.toString();
   }
 }
 
-module.exports = RESTServer;
+module.exports = HTTPServer;

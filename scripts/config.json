@@ -1,0 +1,12 @@
+{
+    "masterNode": {
+        "services": {
+            "mode": "zmq",
+            "address": "localhost:8101"
+        },
+        "topicdata": {
+            "mode": "zmq",
+            "address": "localhost:8103"
+        }
+    }
+}

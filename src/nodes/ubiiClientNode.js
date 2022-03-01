@@ -10,10 +10,10 @@ const ProcessingModuleStorage = require('../storage/processingModuleStorage');
 const TopicDataProxy = require('./topicDataProxy');
 
 class UbiiClientNode {
-  constructor(name, masterNodeIP, masterNodeServicePort) {
+  constructor(name, serviceConnection, topicDataConnection) {
     this.name = name;
-    this.masterNodeIP = masterNodeIP;
-    this.masterNodeServicePort = masterNodeServicePort;
+    this.serviceConnection = serviceConnection;
+    this.topicDataConnection = topicDataConnection;
 
     //this.topicSubscriptions = new Map();
     this.topicDataRegexCallbacks = new Map();
@@ -82,7 +82,9 @@ class UbiiClientNode {
     this.serviceRequestTranslator = new ProtobufTranslator(MSG_TYPES.SERVICE_REQUEST);
     this.serviceReplyTranslator = new ProtobufTranslator(MSG_TYPES.SERVICE_REPLY);
 
-    this.zmqRequest = new ZmqRequest('tcp', this.masterNodeIP + ':' + this.masterNodeServicePort);
+    if (this.serviceConnection.mode === 'zmq') {
+      this.zmqRequest = new ZmqRequest('tcp', this.serviceConnection.address);
+    }
   }
 
   connectTopicdataSocket() {
@@ -94,12 +96,10 @@ class UbiiClientNode {
     }
 
     this.translatorTopicData = new ProtobufTranslator(MSG_TYPES.TOPIC_DATA);
-    this.zmqDealer = new ZmqDealer(
-      this.clientSpecification.id,
-      'tcp',
-      this.masterNodeIP + ':' + this.serverSpecification.portTopicDataZmq
-    );
-    this.zmqDealer.onMessageReceived(this._onTopicDataMessageReceived.bind(this));
+    if (this.topicDataConnection.mode === 'zmq') {
+      this.zmqDealer = new ZmqDealer(this.clientSpecification.id, 'tcp', this.topicDataConnection.address);
+      this.zmqDealer.onMessageReceived(this._onTopicDataMessageReceived.bind(this));
+    }
   }
 
   _onTopicDataMessageReceived(messageBuffer) {
@@ -181,7 +181,7 @@ class UbiiClientNode {
 
   async _onStopSession(msgSession) {
     let pmsRemoved = [];
-    for(let pm of this.processingModuleManager.processingModules.values()) {
+    for (let pm of this.processingModuleManager.processingModules.values()) {
       let pmSpecs = pm.toProtobuf();
       if (pmSpecs.sessionId === msgSession.id) {
         await this.processingModuleManager.stopModule(pmSpecs);

@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 
-class RESTClient {
+class HTTPClient {
   /**
    * Communication endpoint implementing REST pattern.
    * @param {*} host Host to connect to.
@@ -42,4 +42,4 @@ class RESTClient {
   }
 }
 
-module.exports = RESTClient;
+module.exports = HTTPClient;
