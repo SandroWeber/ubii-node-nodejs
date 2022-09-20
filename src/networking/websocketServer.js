@@ -113,7 +113,7 @@ class WebsocketServer {
    * @param {*} callback Callback function that is called when a new message is received from a websocket client.
    * Callback should accept an ID parameter containing the client identity and a message parameter with the received message buffer.
    */
-  onMessageReceived(callback) {
+  setCallbackOnMessage(callback) {
     this.onMessage = callback;
     this.ready = true;
   }

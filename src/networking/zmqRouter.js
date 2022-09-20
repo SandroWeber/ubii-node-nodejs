@@ -81,7 +81,7 @@ class ZmqRouter {
    * @param {*} callback Callback function that is called when a new message is received from a dealer socket.
    * Callback should accept an envelope parameter containing the client identity and a message parameter with the received message buffer.
    */
-  onMessageReceived(callback) {
+  setCallbackOnMessage(callback) {
     this.onMessage = callback;
     this.ready = true;
   }

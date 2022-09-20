@@ -56,7 +56,7 @@ class ZmqReply {
    * @param {*} callback Callback function that is called when a new message is received from a request socket.
    * Callback should accept a message parameter with the received message buffer.
    */
-  onMessageReceived(callback) {
+  setCallbackOnMessage(callback) {
     this.onMessage = callback;
     this.ready = true;
   }
