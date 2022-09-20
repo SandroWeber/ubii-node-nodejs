@@ -98,7 +98,7 @@ class UbiiClientNode {
     this.translatorTopicData = new ProtobufTranslator(MSG_TYPES.TOPIC_DATA);
     if (this.topicDataConnection.mode === 'zmq') {
       this.zmqDealer = new ZmqDealer(this.clientSpecification.id, 'tcp', this.topicDataConnection.address);
-      this.zmqDealer.onMessageReceived(this._onTopicDataMessageReceived.bind(this));
+      this.zmqDealer.setCallbackOnMessage(this._onTopicDataMessageReceived.bind(this));
     }
   }
 
