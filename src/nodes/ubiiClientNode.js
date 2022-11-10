@@ -10,10 +10,11 @@ const ProcessingModuleStorage = require('../storage/processingModuleStorage');
 const TopicDataProxy = require('./topicDataProxy');
 
 class UbiiClientNode {
-  constructor(name, serviceConnection, topicDataConnection) {
+  constructor(name, serviceConnection, topicDataConnection, publishIntervalMs = 15) {
     this.name = name;
     this.serviceConnection = serviceConnection;
     this.topicDataConnection = topicDataConnection;
+    this.publishIntervalMs = publishIntervalMs;
 
     //this.topicSubscriptions = new Map();
     this.topicDataRegexCallbacks = new Map();
@@ -67,15 +68,64 @@ class UbiiClientNode {
 
     this.connectTopicdataSocket();
 
-    await this.proxyTopicData.proxySubscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.START_SESSION, (record) => {
+    await this.proxyTopicData.subscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.START_SESSION, (record) => {
       this._onStartSession(record.session);
     });
-    /*await this.proxyTopicData.proxySubscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.NEW_SESSION, (record) => {
+    /*await this.proxyTopicData.subscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.NEW_SESSION, (record) => {
       this._onNewSession(record.session);
     });*/
-    await this.proxyTopicData.proxySubscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.STOP_SESSION, (record) => {
+    await this.proxyTopicData.subscribeTopic(DEFAULT_TOPICS.INFO_TOPICS.STOP_SESSION, (record) => {
       this._onStopSession(record.session);
     });
+
+    this.setPublishIntervalMs(this.publishIntervalMs);
+  }
+
+  async deinitialize() {
+    this.proxyTopicData.intervalPublishRecords && clearInterval(this.proxyTopicData.intervalPublishRecords);
+  }
+
+  callService(request) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        let buffer = this.serviceRequestTranslator.createBufferFromPayload(request);
+        this.zmqRequest.sendRequest(buffer, (response) => {
+          let reply = this.serviceReplyTranslator.createMessageFromBuffer(response);
+          resolve(reply);
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  async subscribeTopic(topic, callback) {
+    return await this.proxyTopicData.subscribe(topic, (record) => {
+      callback(record);
+    });
+  }
+
+  async subscribeRegex(regex, callback) {
+    return await this.proxyTopicData.subscribeRegex(regex, (record) => {
+      callback(record);
+    });
+  }
+
+  async unsubscribe(token) {
+    return await this.proxyTopicData.unsubscribe(token);
+  }
+
+  setPublishIntervalMs(ms) {
+    this.publishIntervalMs = ms;
+    this.proxyTopicData.setPublishIntervalMs(this.publishIntervalMs);
+  }
+
+  publishRecord(record) {
+    this.proxyTopicData.publishRecord(record);
+  }
+
+  publishRecordList(recordList) {
+    this.proxyTopicData.publishRecordList(recordList);
   }
 
   connectServiceSocket() {
@@ -200,20 +250,6 @@ class UbiiClientNode {
     if (response.error) {
       namida.logFailure('PM_RUNTIME_REMOVE error', response.error);
     }
-  }
-
-  callService(request) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        let buffer = this.serviceRequestTranslator.createBufferFromPayload(request);
-        this.zmqRequest.sendRequest(buffer, (response) => {
-          let reply = this.serviceReplyTranslator.createMessageFromBuffer(response);
-          resolve(reply);
-        });
-      } catch (error) {
-        reject(error);
-      }
-    });
   }
 
   toString() {

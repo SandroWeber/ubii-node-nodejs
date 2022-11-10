@@ -7,29 +7,12 @@ class TopicDataProxy {
     this.topicData = topicData;
     this.ubiiNode = ubiiNode;
     this.regexSubs = [];
-  }
 
-  publish(topic, record) {
-    let msgTopicData = {
-      topicDataRecord: record
-    };
-    this.proxyPublish(msgTopicData);
+    this.recordsToPublish = [];
   }
 
   pull(topic) {
     return this.topicData.pull(topic);
-  }
-
-  async subscribe(topic, callback) {
-    return await this.proxySubscribeTopic(topic, callback);
-  }
-
-  async subscribeRegex(regex, callback) {
-    return await this.proxySubscribeRegex(regex, callback);
-  }
-
-  async unsubscribe(token) {
-    return await this.proxyUnsubscribe(token);
   }
 
   /**
@@ -39,7 +22,7 @@ class TopicDataProxy {
    *
    * @returns {object} Subscription token, save to later unsubscribe
    */
-  async proxySubscribeTopic(topic, callback) {
+  async subscribeTopic(topic, callback) {
     let subscriptions = this.topicData.getSubscriptionTokensForTopic(topic);
     if (!subscriptions || subscriptions.length === 0) {
       let message = {
@@ -74,7 +57,7 @@ class TopicDataProxy {
    * @param {*} regexString
    * @param {*} callback
    */
-  async proxySubscribeRegex(regex, callback) {
+  async subscribeRegex(regex, callback) {
     let subscriptions = this.topicData.getSubscriptionTokensForRegex(regex);
     if (!subscriptions || subscriptions.length === 0) {
       let message = {
@@ -107,7 +90,7 @@ class TopicDataProxy {
    * Unsubscribe at topicdata and possibly at master node.
    * @param {*} token
    */
-  async proxyUnsubscribe(token) {
+  async unsubscribe(token) {
     let result = this.topicData.unsubscribe(token);
 
     let subs = undefined;
@@ -144,14 +127,43 @@ class TopicDataProxy {
     return result;
   }
 
+  publishRecord(record) {
+    this.recordsToPublish.push(record);
+  }
+
+  publishRecordList(recordList) {
+    this.recordsToPublish.push(...recordList);
+  }
+
+  setPublishIntervalMs(intervalMs) {
+    this.intervalPublishRecords && clearInterval(this.intervalPublishRecords);
+
+    this.intervalPublishRecords = setInterval(() => this.flushRecordsToPublish(), intervalMs);
+  }
+
+  flushRecordsToPublish() {
+    if (this.recordsToPublish.length === 0) return;
+
+    let buffer = this.translatorTopicData.createBufferFromPayload({
+      topicDataRecordList: {
+        elements: this.recordsToPublish
+      }
+    });
+    this.ubiiNode.zmqDealer.send(buffer);
+
+    this.recordsToPublish = [];
+  }
+
   /**
    * Publish some TopicData.
    * @param {ubii.topicData.TopicData} topicData
    */
-  proxyPublish(topicData) {
+  publishRecordImmediately(record) {
     //TODO: this should be refactored
     try {
-      let buffer = this.ubiiNode.translatorTopicData.createBufferFromPayload(topicData);
+      let buffer = this.ubiiNode.translatorTopicData.createBufferFromPayload({
+        topicDataRecord: record
+      });
       this.ubiiNode.zmqDealer.send(buffer);
     } catch (error) {
       namida.logFailure('TopicDataProxy', 'failed to send data: ' + error);
