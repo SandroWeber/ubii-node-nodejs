@@ -28,7 +28,7 @@ class TopicDemuxer {
         }
       }
       record.type = this.specs.dataType;
-      this.topicDataBuffer.publish(record.topic, record);
+      this.topicDataBuffer.publishRecordImmediately(record);
     }
   }
 

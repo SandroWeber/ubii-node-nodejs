@@ -286,7 +286,7 @@ class ProcessingModuleManager extends EventEmitter {
 
         // single topic input
         if (!isTopicMuxer) {
-          let subscriptionToken = await topicDataBuffer.subscribe(topicSource, callback);
+          let subscriptionToken = await topicDataBuffer.subscribeTopic(topicSource, callback);
           if (!this.pmTopicSubscriptions.has(processingModule.id)) {
             this.pmTopicSubscriptions.set(processingModule.id, []);
           }
@@ -350,7 +350,7 @@ class ProcessingModuleManager extends EventEmitter {
           record.topic = topicDestination;
           record.type = type;
           record.timestamp = Utils.generateTimestamp();
-          topicDataBuffer.publish(record.topic, record);
+          topicDataBuffer.publishRecordImmediately(record);
         });
 
         /*// lockstep mode
