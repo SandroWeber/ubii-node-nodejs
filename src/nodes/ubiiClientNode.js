@@ -128,6 +128,10 @@ class UbiiClientNode {
     this.proxyTopicData.publishRecordList(recordList);
   }
 
+  publishRecordImmediately(record) {
+    this.proxyTopicData.publishRecordImmediately(record);
+  }
+
   connectServiceSocket() {
     this.serviceRequestTranslator = new ProtobufTranslator(MSG_TYPES.SERVICE_REQUEST);
     this.serviceReplyTranslator = new ProtobufTranslator(MSG_TYPES.SERVICE_REPLY);

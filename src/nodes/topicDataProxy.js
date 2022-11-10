@@ -155,11 +155,10 @@ class TopicDataProxy {
   }
 
   /**
-   * Publish some TopicData.
+   * Publish record without delay.
    * @param {ubii.topicData.TopicData} topicData
    */
   publishRecordImmediately(record) {
-    //TODO: this should be refactored
     try {
       let buffer = this.ubiiNode.translatorTopicData.createBufferFromPayload({
         topicDataRecord: record
