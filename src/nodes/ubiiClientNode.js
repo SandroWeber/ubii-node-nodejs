@@ -100,7 +100,7 @@ class UbiiClientNode {
   }
 
   async subscribeTopic(topic, callback) {
-    return await this.proxyTopicData.subscribe(topic, (record) => {
+    return await this.proxyTopicData.subscribeTopic(topic, (record) => {
       callback(record);
     });
   }
