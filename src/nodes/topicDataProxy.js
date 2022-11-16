@@ -144,7 +144,7 @@ class TopicDataProxy {
   flushRecordsToPublish() {
     if (this.recordsToPublish.length === 0) return;
 
-    let buffer = this.translatorTopicData.createBufferFromPayload({
+    let buffer = this.ubiiNode.translatorTopicData.createBufferFromPayload({
       topicDataRecordList: {
         elements: this.recordsToPublish
       }
