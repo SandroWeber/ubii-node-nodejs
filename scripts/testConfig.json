@@ -1,0 +1,11 @@
+{
+    "masterNode": {
+        "services": {
+            "address": "http://localhost:8102/services/json",
+            "format": "JSON"
+        },
+        "topicdata": {
+            "address": "ws://localhost:8104"
+        }
+    }
+}

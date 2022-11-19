@@ -1,6 +1,7 @@
 const namida = require('@tum-far/namida/src/namida');
 const { ProtobufTranslator, MSG_TYPES, DEFAULT_TOPICS } = require('@tum-far/ubii-msg-formats');
 const { RuntimeTopicData } = require('@tum-far/ubii-topic-data');
+const ServiceClientHTTP = require('../networking/serviceClientHttp.js');
 
 const ZmqDealer = require('../networking/zmqDealer');
 const ZmqRequest = require('../networking/zmqRequest');
@@ -8,6 +9,8 @@ const ZmqRequest = require('../networking/zmqRequest');
 const ProcessingModuleManager = require('../processing/processingModuleManager');
 const ProcessingModuleStorage = require('../storage/processingModuleStorage');
 const TopicDataProxy = require('./topicDataProxy');
+
+const LOG_TAG = 'Node';
 
 class UbiiClientNode {
   constructor(name, serviceConnection, topicDataConnection, publishIntervalMs = 15) {
@@ -42,8 +45,9 @@ class UbiiClientNode {
     });
     if (replyServerSpec.server) {
       this.serverSpecification = replyServerSpec.server;
+      console.info(this.serverSpecification);
     } else {
-      namida.logFailure('UbiiNode.initialize()', 'server config request failed');
+      namida.logFailure(LOG_TAG, 'server config request failed');
       return;
     }
 
@@ -88,10 +92,10 @@ class UbiiClientNode {
   callService(request) {
     return new Promise(async (resolve, reject) => {
       try {
-        let buffer = this.serviceRequestTranslator.createBufferFromPayload(request);
-        this.zmqRequest.sendRequest(buffer, (response) => {
-          let reply = this.serviceReplyTranslator.createMessageFromBuffer(response);
-          resolve(reply);
+        //let buffer = this.serviceRequestTranslator.createBufferFromPayload(request);
+        this.serviceClient.sendRequest(request, (response) => {
+          //let reply = this.serviceReplyTranslator.createMessageFromBuffer(response);
+          resolve(response);
         });
       } catch (error) {
         reject(error);
@@ -133,11 +137,17 @@ class UbiiClientNode {
   }
 
   connectServiceSocket() {
-    this.serviceRequestTranslator = new ProtobufTranslator(MSG_TYPES.SERVICE_REQUEST);
-    this.serviceReplyTranslator = new ProtobufTranslator(MSG_TYPES.SERVICE_REPLY);
+    //this.serviceRequestTranslator = new ProtobufTranslator(MSG_TYPES.SERVICE_REQUEST);
+    //this.serviceReplyTranslator = new ProtobufTranslator(MSG_TYPES.SERVICE_REPLY);
 
-    if (this.serviceConnection.mode === 'zmq') {
-      this.zmqRequest = new ZmqRequest('tcp', this.serviceConnection.address);
+    if (this.serviceConnection.address.startsWith('tcp://')) {
+      if (this.serviceConnection.format) {
+        namida.logFailure(LOG_TAG, `config parameter "format" not supported for tcp protocol, always uses binary`);
+      }
+      let [protocol, address] = this.serviceConnection.address.split('://');
+      this.serviceClient = new ZmqRequest(protocol, address);
+    } else if (this.serviceConnection.address.startsWith('http')) {
+      this.serviceClient = new ServiceClientHTTP(this.serviceConnection.address, this.serviceConnection.format.toUpperCase());
     }
   }
 
@@ -150,8 +160,9 @@ class UbiiClientNode {
     }
 
     this.translatorTopicData = new ProtobufTranslator(MSG_TYPES.TOPIC_DATA);
-    if (this.topicDataConnection.mode === 'zmq') {
-      this.zmqDealer = new ZmqDealer(this.clientSpecification.id, 'tcp', this.topicDataConnection.address);
+    if (this.topicDataConnection.address.startsWith('tcp://')) {
+      let [protocol, address] = this.topicDataConnection.address.split('://');
+      this.zmqDealer = new ZmqDealer(this.clientSpecification.id, protocol, address);
       this.zmqDealer.setCallbackOnMessage(this._onTopicDataMessageReceived.bind(this));
     }
   }
