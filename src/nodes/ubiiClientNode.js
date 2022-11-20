@@ -2,6 +2,7 @@ const namida = require('@tum-far/namida/src/namida');
 const { ProtobufTranslator, MSG_TYPES, DEFAULT_TOPICS } = require('@tum-far/ubii-msg-formats');
 const { RuntimeTopicData } = require('@tum-far/ubii-topic-data');
 const ServiceClientHTTP = require('../networking/serviceClientHttp.js');
+const TopicDataClientWS = require('../networking/topicDataClientWS.js');
 
 const ZmqDealer = require('../networking/zmqDealer');
 const ZmqRequest = require('../networking/zmqRequest');
@@ -45,7 +46,6 @@ class UbiiClientNode {
     });
     if (replyServerSpec.server) {
       this.serverSpecification = replyServerSpec.server;
-      console.info(this.serverSpecification);
     } else {
       namida.logFailure(LOG_TAG, 'server config request failed');
       return;
@@ -147,7 +147,10 @@ class UbiiClientNode {
       let [protocol, address] = this.serviceConnection.address.split('://');
       this.serviceClient = new ZmqRequest(protocol, address);
     } else if (this.serviceConnection.address.startsWith('http')) {
-      this.serviceClient = new ServiceClientHTTP(this.serviceConnection.address, this.serviceConnection.format.toUpperCase());
+      this.serviceClient = new ServiceClientHTTP(
+        this.serviceConnection.address,
+        this.serviceConnection.format.toUpperCase()
+      );
     }
   }
 
@@ -162,8 +165,13 @@ class UbiiClientNode {
     this.translatorTopicData = new ProtobufTranslator(MSG_TYPES.TOPIC_DATA);
     if (this.topicDataConnection.address.startsWith('tcp://')) {
       let [protocol, address] = this.topicDataConnection.address.split('://');
-      this.zmqDealer = new ZmqDealer(this.clientSpecification.id, protocol, address);
-      this.zmqDealer.setCallbackOnMessage(this._onTopicDataMessageReceived.bind(this));
+      this.topicDataClient = new ZmqDealer(this.clientSpecification.id, protocol, address);
+      this.topicDataClient.setCallbackOnMessage(this._onTopicDataMessageReceived.bind(this));
+    } else if (this.topicDataConnection.address.startsWith('ws')) {
+      this.topicDataClient = new TopicDataClientWS(this.clientSpecification.id, this.topicDataConnection.address);
+      this.topicDataClient.setCbOnMessageReceived(this._onTopicDataMessageReceived.bind(this));
+    } else {
+      namida.logFailure(LOG_TAG, `topic data address ${this.topicDataConnection.address} protocol not recognized`);
     }
   }
 

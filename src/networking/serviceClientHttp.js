@@ -53,13 +53,10 @@ class ServiceClientHTTP {
 
       try {
         const response = await axios.post(this.address, message);
-        //console.info(response);
         if (!response.status === 200) {
           console.error(response);
           return reject(response);
         }
-        console.info('response ok');
-        //console.info(response.data);
         onResponseCallback(response.data);
         return resolve(response.data);
       } catch (error) {
