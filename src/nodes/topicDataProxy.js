@@ -149,7 +149,7 @@ class TopicDataProxy {
         elements: this.recordsToPublish
       }
     });
-    this.ubiiNode.zmqDealer.send(buffer);
+    this.ubiiNode.topicDataClient.send(buffer);
 
     this.recordsToPublish = [];
   }

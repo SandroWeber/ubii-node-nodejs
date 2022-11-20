@@ -2,7 +2,7 @@ const UbiiClientNode = require('./nodes/ubiiClientNode');
 
 const ConfigService = require('./config/configService');
 
-const HTTPClient = require('./networking/httpClient');
+const ServiceClientHTTP = require('./networking/serviceClientHttp.js');
 const HTTPServer = require('./networking/httpServer');
 const WebsocketServer = require('./networking/websocketServer');
 const ZmqDealer = require('./networking/zmqDealer');
@@ -21,7 +21,7 @@ const Utils = require('./utilities');
 module.exports = {
   UbiiClientNode,
   ConfigService,
-  HTTPClient,
+  ServiceClientHTTP,
   HTTPServer,
   WebsocketServer,
   ZmqDealer,
