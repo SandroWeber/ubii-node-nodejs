@@ -142,7 +142,7 @@ class UbiiClientNode {
 
     if (this.serviceConnection.address.startsWith('tcp://')) {
       if (this.serviceConnection.format) {
-        namida.logFailure(LOG_TAG, `config parameter "format" not supported for tcp protocol, always uses binary`);
+        namida.warn(LOG_TAG, `config parameter "format" not supported for tcp protocol, always uses binary`);
       }
       let [protocol, address] = this.serviceConnection.address.split('://');
       this.serviceClient = new ZmqRequest(protocol, address);

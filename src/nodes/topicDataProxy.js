@@ -45,7 +45,7 @@ class TopicDataProxy {
       }
     }
 
-    let token = this.topicData.subscribe(topic, (record) => {
+    let token = this.topicData.subscribeTopic(topic, (record) => {
       callback(record);
     });
 
