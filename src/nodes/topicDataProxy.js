@@ -45,7 +45,7 @@ class TopicDataProxy {
       }
     }
 
-    let token = this.topicData.subscribe(topic, (record) => {
+    let token = this.topicData.subscribeTopic(topic, (record) => {
       callback(record);
     });
 
@@ -163,7 +163,7 @@ class TopicDataProxy {
       let buffer = this.ubiiNode.translatorTopicData.createBufferFromPayload({
         topicDataRecord: record
       });
-      this.ubiiNode.zmqDealer.send(buffer);
+      this.ubiiNode.topicDataClient.send(buffer);
     } catch (error) {
       namida.logFailure('TopicDataProxy', 'failed to send data: ' + error);
     }
