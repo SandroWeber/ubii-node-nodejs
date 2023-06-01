@@ -4,6 +4,8 @@ const { SUBSCRIPTION_TYPES } = require('@tum-far/ubii-topic-data');
 
 const LOG_TAG = 'TopicDataProxy';
 
+const PROFILING = false;
+
 class TopicDataProxy {
   constructor(topicData, ubiiNode) {
     this.topicData = topicData;
@@ -38,11 +40,14 @@ class TopicDataProxy {
       try {
         let replySubscribe = await this.ubiiNode.callService(message);
         if (replySubscribe.error) {
-          namida.logFailure('TopicDataProxy', 'server error during subscribe to "' + topic + '": ' + replySubscribe.error);
+          namida.logFailure(
+            'TopicDataProxy',
+            'server error during subscribe to "' + topic + '": ' + replySubscribe.error
+          );
           return replySubscribe.error;
         }
       } catch (error) {
-        namida.logFailure('TopicDataProxy', 'local error during subscribe to "' + topic + '": ' +  error);
+        namida.logFailure('TopicDataProxy', 'local error during subscribe to "' + topic + '": ' + error);
         return error;
       }
     }
@@ -140,25 +145,37 @@ class TopicDataProxy {
   setPublishIntervalMs(intervalMs) {
     this.publishIntervalMs = intervalMs;
     this.intervalPublishRecords && clearInterval(this.intervalPublishRecords);
-    this.intervalPublishRecords = setInterval(() => this.flushRecordsToPublish(), this.publishIntervalMs);
+    this.intervalPublishRecords = setInterval(() => {
+      if (PROFILING && this.tLastRecordFlush) {
+        const msSinceLastCall = Date.now() - this.tLastRecordFlush;
+        if (msSinceLastCall > 1.1 * this.publishIntervalMs) {
+          namida.warn(
+            LOG_TAG,
+            'actual delay (' +
+              msSinceLastCall +
+              'ms) between regular publish exceeded target delay (' +
+              this.publishIntervalMs +
+              'ms)'
+          );
+        }
+      }
+      this.tLastRecordFlush = Date.now();
+
+      this.flushRecordsToPublish();
+    }, this.publishIntervalMs);
   }
 
   flushRecordsToPublish() {
-    /*if (this.tLastRecordFlush) {
-      const msSinceLastCall = Date.now() - this.tLastRecordFlush;
-      if (msSinceLastCall > 1.1 * this.publishIntervalMs) {
-        namida.warn(LOG_TAG, 'actual delay (' + msSinceLastCall + 'ms) between regular publish exceeded target delay (' + this.publishIntervalMs + 'ms)');
-      }
-    }
-    this.tLastRecordFlush = Date.now();*/
-
     if (this.recordsToPublish.length === 0) return;
 
+    //const tStart = Date.now();
     let buffer = this.ubiiNode.translatorTopicData.createBufferFromPayload({
       topicDataRecordList: {
         elements: this.recordsToPublish
       }
     });
+    //const tEndSerialization = Date.now();
+    //console.info('serialization time (ms): ' + (tEndSerialization - tStart));
     this.ubiiNode.topicDataClient.send(buffer);
 
     this.recordsToPublish = [];

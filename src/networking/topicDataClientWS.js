@@ -68,7 +68,10 @@ class TopicDataClientWS {
    * @param {(string|Buffer)} message
    */
   send(message) {
+    //const tStart = Date.now();
     this.websocket.send(message);
+    //const tEndSend = Date.now();
+    //console.info('Websocket send time (ms): ' + (tEndSend - tStart));
   }
 
   stop() {

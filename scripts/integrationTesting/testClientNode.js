@@ -2,7 +2,7 @@ const { exit } = require('shelljs');
 const namida = require('@tum-far/namida');
 
 const { UbiiClientNode } = require('../../src/index');
-const config = require('../testConfig.json');
+const config = require('./testConfigZMQ.json');
 const BaseTest = require('./tests/baseTest');
 const TestBasicPublishSubscribe = require('./tests/testBasicPublishSubscribe');
 const TestSetPublishInterval = require('./tests/testSetPublishInterval');
