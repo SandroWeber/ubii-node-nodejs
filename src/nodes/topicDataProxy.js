@@ -2,6 +2,8 @@ const namida = require('@tum-far/namida/src/namida');
 const { DEFAULT_TOPICS } = require('@tum-far/ubii-msg-formats');
 const { SUBSCRIPTION_TYPES } = require('@tum-far/ubii-topic-data');
 
+const LOG_TAG = 'TopicDataProxy';
+
 class TopicDataProxy {
   constructor(topicData, ubiiNode) {
     this.topicData = topicData;
@@ -136,12 +138,20 @@ class TopicDataProxy {
   }
 
   setPublishIntervalMs(intervalMs) {
+    this.publishIntervalMs = intervalMs;
     this.intervalPublishRecords && clearInterval(this.intervalPublishRecords);
-
-    this.intervalPublishRecords = setInterval(() => this.flushRecordsToPublish(), intervalMs);
+    this.intervalPublishRecords = setInterval(() => this.flushRecordsToPublish(), this.publishIntervalMs);
   }
 
   flushRecordsToPublish() {
+    /*if (this.tLastRecordFlush) {
+      const msSinceLastCall = Date.now() - this.tLastRecordFlush;
+      if (msSinceLastCall > 1.1 * this.publishIntervalMs) {
+        namida.warn(LOG_TAG, 'actual delay (' + msSinceLastCall + 'ms) between regular publish exceeded target delay (' + this.publishIntervalMs + 'ms)');
+      }
+    }
+    this.tLastRecordFlush = Date.now();*/
+
     if (this.recordsToPublish.length === 0) return;
 
     let buffer = this.ubiiNode.translatorTopicData.createBufferFromPayload({

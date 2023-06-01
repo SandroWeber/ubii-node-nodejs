@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "start": "node scripts/startClientNode.js",
-    "testClientNode": "node scripts/testClientNode.js"
+    "integration-tests": "node scripts/integrationTesting/testClientNode.js"
   },
   "files": [
     "src/"
