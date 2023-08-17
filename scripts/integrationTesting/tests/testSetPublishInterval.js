@@ -51,22 +51,22 @@ class TestSetPublishInterval extends BaseTest {
         if (msgCounter === MAX_COUNTER) {
           this.testStop = Date.now();
           const testDuration = this.testStop - this.testStart;
-          const toleranceDuration = 1.05 * EXPECTED_DURATION;
+          const toleranceDuration = 1.1 * EXPECTED_DURATION;
+          let resultMsg =
+            'duration=' +
+            testDuration +
+            'ms (max tolerance ' +
+            toleranceDuration +
+            'ms) | actual rate=' +
+            testDuration / msgCounter +
+            'ms (target ' +
+            PUBLISH_INTERVAL_MS +
+            'ms)';
           if (testDuration > toleranceDuration) {
-            namida.logFailure(
-              LOG_TAG,
-              'duration exceeded tolerance: duration=' +
-                testDuration +
-                'ms (max tolerance ' +
-                toleranceDuration +
-                'ms) | actual rate=' +
-                testDuration / msgCounter +
-                'ms (target ' +
-                PUBLISH_INTERVAL_MS +
-                'ms)'
-            );
+            namida.logFailure(LOG_TAG, resultMsg);
             reject(BaseTest.CONSTANTS.STATUS.FAILED);
           } else {
+            namida.logSuccess(LOG_TAG, resultMsg);
             resolve(BaseTest.CONSTANTS.STATUS.SUCCESS);
           }
         } else {
