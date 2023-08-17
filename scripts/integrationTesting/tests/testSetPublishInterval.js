@@ -31,7 +31,7 @@ class TestSetPublishInterval extends BaseTest {
 
   executeTest() {
     return new Promise((resolve, reject) => {
-      const PUBLISH_INTERVAL_MS = 40;
+      const PUBLISH_INTERVAL_MS = 15;
       const MAX_COUNTER = 100;
       const testTopic = uuidv4();
       let msgCounter = 0;

@@ -6,6 +6,7 @@ const config = require('./testConfigZMQ.json');
 const BaseTest = require('./tests/baseTest');
 const TestBasicPublishSubscribe = require('./tests/testBasicPublishSubscribe');
 const TestSetPublishInterval = require('./tests/testSetPublishInterval');
+const TestLargeTopicData = require('./tests/testLargeTopicData');
 
 let runTest = async (test) => {
   const testResult = await test.run();
@@ -21,7 +22,7 @@ let runTest = async (test) => {
 };
 
 (async function () {
-  let ubiiNode = new UbiiClientNode('test-node-nodejs', config.masterNode.services, config.masterNode.topicdata);
+  let ubiiNode = new UbiiClientNode('test-node-nodejs', config.masterNode.services, config.masterNode.topicdata, 5);
   await ubiiNode.initialize();
 
   let testBasicPublishSubscribe = new TestBasicPublishSubscribe(ubiiNode);
@@ -29,6 +30,9 @@ let runTest = async (test) => {
 
   let testSetPublishInterval = new TestSetPublishInterval(ubiiNode);
   await runTest(testSetPublishInterval);
+
+  let testLargeTopicData = new TestLargeTopicData(ubiiNode);
+  await runTest(testLargeTopicData);
 
   exit();
 })();
