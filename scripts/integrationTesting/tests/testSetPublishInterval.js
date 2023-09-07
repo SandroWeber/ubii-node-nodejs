@@ -31,7 +31,8 @@ class TestSetPublishInterval extends BaseTest {
 
   executeTest() {
     return new Promise((resolve, reject) => {
-      const PUBLISH_INTERVAL_MS = 15;
+      /* windows process sceduler causes this test to fail for any publish interval below 55ms, on linux all rates work fine */
+      const PUBLISH_INTERVAL_MS = 60;
       const MAX_COUNTER = 100;
       const testTopic = uuidv4();
       let msgCounter = 0;

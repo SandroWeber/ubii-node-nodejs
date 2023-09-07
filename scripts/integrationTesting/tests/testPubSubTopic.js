@@ -2,9 +2,9 @@ const { v4: uuidv4 } = require('uuid');
 
 const BaseTest = require('./baseTest');
 
-const LOG_TAG = 'TestBasicPublishSubscribe';
+const LOG_TAG = 'TestPubSubTopic';
 
-class TestBasicPublishSubscribe extends BaseTest {
+class TestPubSubTopic extends BaseTest {
   constructor(ubiiNode) {
     super(ubiiNode);
     this.status = BaseTest.CONSTANTS.STATUS.CREATED;
@@ -36,21 +36,32 @@ class TestBasicPublishSubscribe extends BaseTest {
       this.ubiiNode.subscribeTopic(testTopic, (record) => {
         if (record.int32 !== this.expectedCounter) {
           reject(BaseTest.CONSTANTS.STATUS.FAILED);
+        } else {
+          counter++;
+          if (counter === MAX_COUNTER) {
+            resolve(BaseTest.CONSTANTS.STATUS.SUCCESS);
+          } else {
+            this.expectedCounter = counter;
+            if (counter % 2 === 0) {
+              this.ubiiNode.publishRecordImmediately({
+                topic: testTopic,
+                int32: counter
+              });
+            } else {
+              this.ubiiNode.publishRecord({
+                topic: testTopic,
+                int32: counter
+              });
+            }
+          }
         }
       });
 
-      this.intervalPublishTestTopic = setInterval(() => {
-        counter++;
-        if (counter === MAX_COUNTER) {
-          resolve(BaseTest.CONSTANTS.STATUS.SUCCESS);
-        } else {
-          this.expectedCounter = counter;
-          this.ubiiNode.publishRecordImmediately({
-            topic: testTopic,
-            int32: counter
-          });
-        }
-      }, PUBLISH_INTERVAL_MS);
+      this.expectedCounter = counter;
+      this.ubiiNode.publishRecordImmediately({
+        topic: testTopic,
+        int32: counter
+      });
     });
   }
 
@@ -60,4 +71,4 @@ class TestBasicPublishSubscribe extends BaseTest {
   }
 }
 
-module.exports = TestBasicPublishSubscribe;
+module.exports = TestPubSubTopic;
