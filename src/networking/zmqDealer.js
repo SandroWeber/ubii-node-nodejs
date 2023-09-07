@@ -87,8 +87,10 @@ class ZmqDealer {
    * @param {(string|Buffer)} payload
    */
   send(payload) {
-    // send
+    //const tStart = Date.now();
     this.socket.send(payload);
+    //const tEndSend = Date.now();
+    //console.info('ZeroMQ send time (ms): ' + (tEndSend - tStart));
   }
 
   toString() {

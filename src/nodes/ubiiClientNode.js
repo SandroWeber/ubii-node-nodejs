@@ -14,7 +14,7 @@ const TopicDataProxy = require('./topicDataProxy');
 const LOG_TAG = 'Node';
 
 class UbiiClientNode {
-  constructor(name, serviceConnection, topicDataConnection, publishIntervalMs = 15) {
+  constructor(name, serviceConnection, topicDataConnection, publishIntervalMs = 5) {
     this.name = name;
     this.serviceConnection = serviceConnection;
     this.topicDataConnection = topicDataConnection;
