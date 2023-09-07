@@ -96,7 +96,7 @@ class ZmqDealer {
   toString() {
     let status = this.ready ? 'ready' : 'not ready';
 
-    return this.identity + ' | ' + status + ' | ZMQ-DEALER ' + this.endpoint;
+    return this.identity + ' | ' + status + ' | ZMQ-DEALER at ' + this.endpoint;
   }
 }
 

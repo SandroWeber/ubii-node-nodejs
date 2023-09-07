@@ -109,7 +109,7 @@ class ZmqRouter {
   toString() {
     let status = this.ready ? 'ready' : 'not ready';
 
-    return this.identity + ' | ' + status + ' | ZMQ-ROUTER ' + this.endpoint;
+    return this.identity + ' | ' + status + ' | ZMQ-ROUTER at ' + this.endpoint;
   }
 }
 

@@ -149,7 +149,7 @@ class WebsocketServer {
   toString() {
     let status = this.ready ? 'ready' : 'not ready';
 
-    return 'WS-Topicdata | ' + status + ' | websocket ' + this.endpoint;
+    return 'WS-Topicdata | ' + status + ' | WEBSOCKET at ' + this.endpoint;
   }
 }
 

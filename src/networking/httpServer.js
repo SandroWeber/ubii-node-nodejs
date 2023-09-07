@@ -117,7 +117,7 @@ class HTTPServer {
   toString() {
     let status = this.ready ? 'ready' : 'not ready';
 
-    return 'REST-Server | ' + status + ' | POST service route(s) ' + this.endpointServices.toString();
+    return 'HTTP(S)-Service | ' + status + ' | POST at ' + this.endpointServices.toString();
   }
 }
 

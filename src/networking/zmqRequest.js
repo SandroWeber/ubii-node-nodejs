@@ -89,7 +89,7 @@ class ZmqRequest {
   toString() {
     let status = this.ready ? 'ready' : 'not ready';
 
-    return 'ZMQ-Service | ' + status + ' | ZMQ-REQUEST ' + this.endpoint;
+    return 'ZMQ-Service | ' + status + ' | ZMQ-REQUEST at ' + this.endpoint;
   }
 }
 
