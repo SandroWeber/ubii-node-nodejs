@@ -22,6 +22,7 @@ class TestSetPublishInterval extends BaseTest {
     }
     this.finishTest(result);
     this.ubiiNode.setPublishIntervalMs(originalPublishInterval);
+
     return result;
   }
 
@@ -42,13 +43,6 @@ class TestSetPublishInterval extends BaseTest {
 
       this.ubiiNode.subscribeTopic(testTopic, () => {
         msgCounter++;
-      });
-
-      this.intervalPublishTestTopic = setInterval(() => {
-        if (msgCounter === 0) {
-          this.testStart = Date.now();
-        }
-
         if (msgCounter === MAX_COUNTER) {
           this.testStop = Date.now();
           const testDuration = this.testStop - this.testStart;
@@ -58,7 +52,7 @@ class TestSetPublishInterval extends BaseTest {
             testDuration +
             'ms (max tolerance ' +
             toleranceDuration +
-            'ms) | actual rate=' +
+            'ms) | actual interval=' +
             testDuration / msgCounter +
             'ms (target ' +
             PUBLISH_INTERVAL_MS +
@@ -70,7 +64,14 @@ class TestSetPublishInterval extends BaseTest {
             namida.logSuccess(LOG_TAG, resultMsg);
             resolve(BaseTest.CONSTANTS.STATUS.SUCCESS);
           }
-        } else {
+        }
+      });
+
+      this.intervalPublishTestTopic = setInterval(() => {
+        if (msgCounter === 0) {
+          this.testStart = Date.now();
+        }
+        if (msgCounter < MAX_COUNTER) {
           this.ubiiNode.publishRecord({
             topic: testTopic,
             int32: 1
