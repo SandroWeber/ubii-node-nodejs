@@ -1,0 +1,10 @@
+{
+    "masterNode": {
+        "services": {
+            "address": "tcp://localhost:8101"
+        },
+        "topicdata": {
+            "address": "tcp://localhost:8103"
+        }
+    }
+}

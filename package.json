@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "start": "node scripts/startClientNode.js",
-    "testClientNode": "node scripts/testClientNode.js"
+    "integration-tests": "node scripts/integrationTesting/testClientNode.js"
   },
   "files": [
     "src/"
@@ -23,8 +23,8 @@
   "main": "src/index.js",
   "dependencies": {
     "@tum-far/namida": "0.1.1",
-    "@tum-far/ubii-msg-formats": "0.15.16",
-    "@tum-far/ubii-topic-data": "0.4.7",
+    "@tum-far/ubii-msg-formats": "0.16.6",
+    "@tum-far/ubii-topic-data": "0.4.8",
     "axios": "1.1.3",
     "express": "4.17.1",
     "shelljs": "0.8.5",

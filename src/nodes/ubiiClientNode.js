@@ -14,7 +14,7 @@ const TopicDataProxy = require('./topicDataProxy');
 const LOG_TAG = 'Node';
 
 class UbiiClientNode {
-  constructor(name, serviceConnection, topicDataConnection, publishIntervalMs = 15) {
+  constructor(name, serviceConnection, topicDataConnection, publishIntervalMs = 5) {
     this.name = name;
     this.serviceConnection = serviceConnection;
     this.topicDataConnection = topicDataConnection;
@@ -86,6 +86,18 @@ class UbiiClientNode {
   }
 
   async deinitialize() {
+    if (typeof this.id !== 'undefined') {
+      let reply = await this.callService({
+        topic: DEFAULT_TOPICS.SERVICES.CLIENT_DEREGISTRATION,
+        client: {
+          id: this.id
+        }
+      });
+      if (reply.error) {
+        namida.logFailure(LOG_TAG, reply.error.title + ': ' + reply.error.message);
+      }
+    }
+
     this.proxyTopicData.intervalPublishRecords && clearInterval(this.proxyTopicData.intervalPublishRecords);
   }
 
