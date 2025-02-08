@@ -1,6 +1,10 @@
 const zmq = require('zeromq');
 
 const { PING_MESSAGE, PONG_MESSAGE } = require('./constants');
+const LoggingService = require('../loggingService');
+
+const LOG_TAG = '[UBII ZmqDealer]';
+const logger = LoggingService.instance.logger;
 
 class ZmqDealer {
   /**
@@ -47,7 +51,7 @@ class ZmqDealer {
       }
 
       if (!this.onMessage) {
-        namida.logFailure('ZMQ router socket', 'no callback for message handling set!');
+        logger.error(LOG_TAG, 'no callback for message handling set!');
       } else {
         this.onMessage(payload);
       }

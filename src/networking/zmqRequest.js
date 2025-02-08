@@ -1,7 +1,11 @@
 const zmq = require('zeromq');
 
-const namida = require('@tum-far/namida/src/namida');
 const { ProtobufTranslator, MSG_TYPES } = require('@tum-far/ubii-msg-formats');
+
+const LoggingService = require('../loggingService');
+
+const LOG_TAG = '[UBII ZmqRequest]';
+const logger = LoggingService.instance.logger;
 
 class ZmqRequest {
   /**
@@ -34,7 +38,7 @@ class ZmqRequest {
     // add callbacks
     this.socket.on('message', (response) => {
       if (!this.onResponse) {
-        namida.logFailure('ZMQ request socket', 'no callback for response handling set!');
+        logger.error(LOG_TAG, 'no callback for response handling set!');
       } else {
         let responseMsg = this.serviceReplyTranslator.createMessageFromBuffer(response);
         this.onResponse(responseMsg);
@@ -58,7 +62,7 @@ class ZmqRequest {
         this.handleNextRequest();
       }
       setTimeout(requestQueueWorker, 1);
-    }
+    };
     requestQueueWorker();
   }
 
@@ -69,7 +73,7 @@ class ZmqRequest {
 
   sendRequest(request, onResponseCallback) {
     //let requestBuffer = this.serviceRequestTranslator.createBufferFromPayload(request);
-    this.requestQueue.push({request, onResponseCallback});
+    this.requestQueue.push({ request, onResponseCallback });
 
     this.handleNextRequest();
   }
@@ -80,7 +84,7 @@ class ZmqRequest {
     }
     this.pendingRequest = true;
 
-    let next = this.requestQueue.splice(0,1)[0];
+    let next = this.requestQueue.splice(0, 1)[0];
     this.onResponse = next.onResponseCallback;
     let requestBuffer = this.serviceRequestTranslator.createBufferFromPayload(next.request);
     this.socket.send(requestBuffer);

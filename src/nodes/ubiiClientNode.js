@@ -1,4 +1,3 @@
-const namida = require('@tum-far/namida/src/namida');
 const { ProtobufTranslator, MSG_TYPES, DEFAULT_TOPICS } = require('@tum-far/ubii-msg-formats');
 const { RuntimeTopicData } = require('@tum-far/ubii-topic-data');
 const ServiceClientHTTP = require('../networking/serviceClientHttp.js');
@@ -10,8 +9,10 @@ const ZmqRequest = require('../networking/zmqRequest');
 const ProcessingModuleManager = require('../processing/processingModuleManager');
 //const ProcessingModuleStorage = require('../storage/processingModuleStorage');
 const TopicDataProxy = require('./topicDataProxy');
+const LoggingService = require('../loggingService');
 
-const LOG_TAG = 'Node';
+const LOG_TAG = '[UBII UbiiClientNode]';
+const logger = LoggingService.instance.logger;
 
 class UbiiClientNode {
   constructor(name, serviceConnection, topicDataConnection, publishIntervalMs = 15) {
@@ -19,9 +20,6 @@ class UbiiClientNode {
     this.serviceConnection = serviceConnection;
     this.topicDataConnection = topicDataConnection;
     this.publishIntervalMs = publishIntervalMs;
-
-    //this.topicSubscriptions = new Map();
-    this.topicDataRegexCallbacks = new Map();
 
     this.topicDataBuffer = new RuntimeTopicData();
     //TODO: for now we prevent direct publishing to local topicdata buffer
@@ -47,7 +45,7 @@ class UbiiClientNode {
     if (replyServerSpec.server) {
       this.serverSpecification = replyServerSpec.server;
     } else {
-      namida.logFailure(LOG_TAG, 'server config request failed');
+      logger.error(LOG_TAG, 'server config request failed');
       return;
     }
 
@@ -55,16 +53,16 @@ class UbiiClientNode {
     let replyClientRegistration = await this.callService({
       topic: DEFAULT_TOPICS.SERVICES.CLIENT_REGISTRATION,
       client: {
-        name: this.name/*,
+        name: this.name /*,
         isDedicatedProcessingNode: true,
         processingModules: ProcessingModuleStorage.instance.getAllSpecs()*/
       }
     });
     if (replyClientRegistration.client) {
       this.clientSpecification = replyClientRegistration.client;
-      namida.logSuccess(this.toString(), 'successfully registered at master node');
+      logger.info(LOG_TAG + ' successfully registered at master node');
     } else {
-      namida.logFailure('UbiiNode.initialize()', 'client registration failed');
+      logger.error('UbiiNode.initialize()', 'client registration failed');
       return;
     }
 
@@ -142,7 +140,7 @@ class UbiiClientNode {
 
     if (this.serviceConnection.address.startsWith('tcp://')) {
       if (this.serviceConnection.format) {
-        namida.warn(LOG_TAG, `config parameter "format" not supported for tcp protocol, always uses binary`);
+        logger.warn(LOG_TAG, `config parameter "format" not supported for tcp protocol, always uses binary`);
       }
       let [protocol, address] = this.serviceConnection.address.split('://');
       this.serviceClient = new ZmqRequest(protocol, address);
@@ -156,7 +154,7 @@ class UbiiClientNode {
 
   connectTopicdataSocket() {
     if (!this.serverSpecification || !this.clientSpecification) {
-      namida.logFailure(
+      logger.error(
         'Ubii Node',
         "can't connect topic data socket, missing specifications for port and client configuration"
       );
@@ -171,14 +169,14 @@ class UbiiClientNode {
       this.topicDataClient = new TopicDataClientWS(this.clientSpecification.id, this.topicDataConnection.address);
       this.topicDataClient.setCbOnMessageReceived(this._onTopicDataMessageReceived.bind(this));
     } else {
-      namida.logFailure(LOG_TAG, `topic data address ${this.topicDataConnection.address} protocol not recognized`);
+      logger.error(LOG_TAG, `topic data address ${this.topicDataConnection.address} protocol not recognized`);
     }
   }
 
   _onTopicDataMessageReceived(messageBuffer) {
     let topicdataMsg = this.translatorTopicData.createPayloadFromBuffer(messageBuffer);
     if (!topicdataMsg) {
-      namida.logFailure('TopicData received', 'could not parse topic data message from buffer');
+      logger.error('TopicData received', 'could not parse topic data message from buffer');
       return;
     }
 
@@ -189,7 +187,7 @@ class UbiiClientNode {
       try {
         this.topicDataBuffer.publish(record.topic, record);
       } catch (error) {
-        namida.logFailure('TopicData received', 'topic "' + record.topic + '"\n' + error);
+        logger.error('TopicData received', 'topic "' + record.topic + '"\n' + error);
       }
     });
   }
@@ -220,7 +218,7 @@ class UbiiClientNode {
     };
     let response = await this.callService(pmRuntimeAddRequest);
     if (response.error) {
-      namida.logFailure('PM_RUNTIME_ADD error', response.error);
+      logger.error('PM_RUNTIME_ADD error', response.error);
     }
   }
 
@@ -271,7 +269,7 @@ class UbiiClientNode {
     };
     let response = await this.callService(pmRuntimeRemoveRequest);
     if (response.error) {
-      namida.logFailure('PM_RUNTIME_REMOVE error', response.error);
+      logger.error('PM_RUNTIME_REMOVE error', response.error);
     }
   }
 

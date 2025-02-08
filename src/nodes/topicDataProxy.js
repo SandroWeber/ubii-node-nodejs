@@ -1,6 +1,10 @@
-const namida = require('@tum-far/namida/src/namida');
 const { DEFAULT_TOPICS } = require('@tum-far/ubii-msg-formats');
 const { SUBSCRIPTION_TYPES } = require('@tum-far/ubii-topic-data');
+
+const LoggingService = require('../loggingService');
+
+const LOG_TAG = '[UBII TopicDataProxy]';
+const logger = LoggingService.instance.logger;
 
 class TopicDataProxy {
   constructor(topicData, ubiiNode) {
@@ -36,11 +40,11 @@ class TopicDataProxy {
       try {
         let replySubscribe = await this.ubiiNode.callService(message);
         if (replySubscribe.error) {
-          namida.logFailure('TopicDataProxy', 'server error during subscribe to "' + topic + '": ' + replySubscribe.error);
+          logger.error(LOG_TAG, 'server error during subscribe to "' + topic + '": ' + replySubscribe.error);
           return replySubscribe.error;
         }
       } catch (error) {
-        namida.logFailure('TopicDataProxy', 'local error during subscribe to "' + topic + '": ' +  error);
+        logger.error(LOG_TAG, 'local error during subscribe to "' + topic + '": ' +  error);
         return error;
       }
     }
@@ -74,7 +78,7 @@ class TopicDataProxy {
           return replySubscribe.error;
         }
       } catch (error) {
-        namida.logFailure('TopicDataProxy', error);
+        logger.error(LOG_TAG, error);
         return error;
       }
     }
@@ -119,7 +123,7 @@ class TopicDataProxy {
           return replySubscribe.error;
         }
       } catch (error) {
-        namida.logFailure('TopicData Proxy', error);
+        logger.error(LOG_TAG, error);
         return error;
       }
     }
@@ -165,7 +169,7 @@ class TopicDataProxy {
       });
       this.ubiiNode.topicDataClient.send(buffer);
     } catch (error) {
-      namida.logFailure('TopicDataProxy', 'failed to send data: ' + error);
+      logger.error(LOG_TAG, 'failed to send data: ' + error);
     }
 
     //TODO: as soon as master node has smart distinction of topic ownership for clients and will not send back

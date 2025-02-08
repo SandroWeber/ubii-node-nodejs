@@ -2,10 +2,13 @@ const EventEmitter = require('events');
 const { v4: uuidv4 } = require('uuid');
 const { proto, ProtobufTranslator, MSG_TYPES } = require('@tum-far/ubii-msg-formats');
 const ProcessingModuleProto = proto.ubii.processing.ProcessingModule;
-const namida = require('@tum-far/namida');
 
 const ExternalLibrariesService = require('./externalLibrariesService');
 const Utils = require('../utilities');
+const LoggingService = require('../loggingService');
+
+const LOG_TAG = '[UBII ProcessingModule]';
+const logger = LoggingService.instance.logger;
 
 class ProcessingModule extends EventEmitter {
   constructor(specs = {}) {
@@ -21,8 +24,8 @@ class ProcessingModule extends EventEmitter {
     // check that language specification for module is correct
     if (this.language === undefined) this.language = ProcessingModuleProto.Language.JS;
     if (this.language !== ProcessingModuleProto.Language.JS) {
-      namida.error(
-        'ProcessingModule ' + this.toString(),
+      logger.error(
+        LOG_TAG + this.toString(),
         'trying to create module under javascript, but specification says ' +
           ProcessingModuleProto.Language[this.language]
       );
@@ -73,7 +76,7 @@ class ProcessingModule extends EventEmitter {
       this.openWorkerpoolExecutions = [];
     }
     if (!this.processingMode) {
-      namida.logFailure(this.toString(), 'no processing mode specified, can not start processing');
+      logger.error(LOG_TAG, this.toString(), 'no processing mode specified, can not start processing');
       return false;
     }
 
@@ -92,7 +95,7 @@ class ProcessingModule extends EventEmitter {
       } else {
         message += ' (without workerpool)';
       }
-      namida.logSuccess(this.toString(), message);
+      logger.info(LOG_TAG, this.toString(), message);
       return true;
     }
 
@@ -118,7 +121,7 @@ class ProcessingModule extends EventEmitter {
       }
     }
 
-    namida.logSuccess(this.toString(), 'stopped');
+    logger.info(LOG_TAG, this.toString(), 'stopped');
 
     return true;
   }
@@ -141,8 +144,8 @@ class ProcessingModule extends EventEmitter {
       if (this.status === ProcessingModuleProto.Status.PROCESSING) {
         let tRemaining = this.tLastProcess + targetFrequencyMillis - Date.now();
         /*if (tRemaining < 0) {
-          namida.warn(
-            this.toString(),
+          logger.warn(
+            LOG_TAG, this.toString(),
             'overshooting target frequency by ' +
               Math.abs(tRemaining) +
               ' - consider throttling down processing frequency'
@@ -235,7 +238,7 @@ class ProcessingModule extends EventEmitter {
           .catch((error) => {
             if (!error.message || error.message !== 'promise cancelled') {
               // executuion was not just cancelled via workerpool API
-              namida.logFailure(this.toString(), 'workerpool execution failed - ' + error + '\n' + error.stack);
+              logger.error(LOG_TAG, this.toString(), 'workerpool execution failed - ' + error + '\n' + error.stack);
             }
           });
         this.openWorkerpoolExecutions.push(wpExecPromise);
@@ -245,7 +248,11 @@ class ProcessingModule extends EventEmitter {
       };
       this.onProcessing = workerpoolOnProcessing;
     } else {
-      namida.warn(this.toString(), 'not viable to be executed via workerpool, might slow down system significantly');
+      logger.warn(
+        LOG_TAG,
+        this.toString(),
+        'not viable to be executed via workerpool, might slow down system significantly'
+      );
     }
   }
 
@@ -296,7 +303,7 @@ class ProcessingModule extends EventEmitter {
       outputs +
       '\nstate:\n' +
       state;
-    namida.error(this.toString(), errorMsg);
+    logger.error(LOG_TAG, this.toString(), errorMsg);
     throw new Error(this.toString() + ' - onProcessing() callback is not specified');
   }
 
@@ -320,12 +327,20 @@ class ProcessingModule extends EventEmitter {
 
     // make sure getter is defined
     if (getter === undefined) {
-      namida.error(this.toString(), 'trying to set input getter for ' + internalName + ' but getter is undefined');
+      logger.error(
+        LOG_TAG,
+        this.toString(),
+        'trying to set input getter for ' + internalName + ' but getter is undefined'
+      );
       return false;
     }
     // make sure getter is a function
     if (typeof getter !== 'function') {
-      namida.error(this.toString(), 'trying to set input getter for ' + internalName + ' but getter is not a function');
+      logger.error(
+        LOG_TAG,
+        this.toString(),
+        'trying to set input getter for ' + internalName + ' but getter is not a function'
+      );
       return false;
     }
 
@@ -353,12 +368,17 @@ class ProcessingModule extends EventEmitter {
 
     // make sure setter is defined
     if (setter === undefined) {
-      namida.error(this.toString(), 'trying to set output setter for ' + internalName + ' but setter is undefined');
+      logger.error(
+        LOG_TAG,
+        this.toString(),
+        'trying to set output setter for ' + internalName + ' but setter is undefined'
+      );
       return false;
     }
     // make sure setter is a function
     if (typeof setter !== 'function') {
-      namida.error(
+      logger.error(
+        LOG_TAG,
         this.toString(),
         'trying to set output setter for ' + internalName + ' but setter is not a function'
       );
@@ -398,7 +418,8 @@ class ProcessingModule extends EventEmitter {
     // case: name that is a property of this class and explicitly not an otherwise viable internal name
     // and should therefore never be overwritten
     if (this.hasOwnProperty(internalName) && !this.ioProxy.hasOwnProperty(internalName)) {
-      namida.error(
+      logger.error(
+        LOG_TAG,
         this.toString(),
         'the internal I/O naming "' + internalName + '" should not be used as it conflicts with internal properties'
       );
@@ -406,7 +427,8 @@ class ProcessingModule extends EventEmitter {
     }
     // case: we're not using an already defined name without specifying to overwrite
     if (this.ioProxy.hasOwnProperty(internalName) && !overwrite) {
-      namida.error(
+      logger.error(
+        LOG_TAG,
         this.toString(),
         'the internal I/O naming "' + internalName + '" is already defined (overwrite not specified)'
       );
@@ -414,7 +436,7 @@ class ProcessingModule extends EventEmitter {
     }
     // case: the internal name is empty
     if (internalName === '') {
-      namida.error(this.toString(), 'the internal I/O naming "' + internalName + '" can\'t be used (empty)');
+      logger.error(LOG_TAG, this.toString(), 'the internal I/O naming "' + internalName + '" can\'t be used (empty)');
       return false;
     }
 

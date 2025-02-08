@@ -5,6 +5,10 @@ const url = require('url');
 
 const ConfigService = require('../config/configService');
 const { PING_MESSAGE, PONG_MESSAGE } = require('./constants');
+const LoggingService = require('../loggingService');
+
+const LOG_TAG = '[UBII WebsocketServer]';
+const logger = LoggingService.instance.logger;
 
 class WebsocketServer {
   /**
@@ -97,7 +101,7 @@ class WebsocketServer {
       }
 
       if (!this.onMessage) {
-        namida.logFailure('Websocket Server', 'no callback for message handling set!');
+        logger.error(LOG_TAG, 'no callback for message handling set!');
       } else {
         this.onMessage(clientID, message);
       }

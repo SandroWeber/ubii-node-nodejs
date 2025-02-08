@@ -2,7 +2,10 @@ const fs = require('fs');
 const path = require('path');
 const shelljs = require('shelljs');
 
-const namida = require('@tum-far/namida/src/namida');
+const LoggingService = require('../loggingService');
+
+const LOG_TAG = '[UBII Storage]';
+const logger = LoggingService.instance.logger;
 
 class StorageEntry {
   constructor(fileName, fileData) {
@@ -24,16 +27,12 @@ class FileHandler {
 
   readFile() {
     throw new Error(
-      'SpecificationHandler(' +
-        this.fileEnding +
-        ').readFile() must be overwritten, must return {key, value}'
+      'SpecificationHandler(' + this.fileEnding + ').readFile() must be overwritten, must return {key, value}'
     );
   }
 
   writeFile() {
-    throw new Error(
-      'SpecificationHandler(' + this.fileEnding + ').writeFile() must be overwritten'
-    );
+    throw new Error('SpecificationHandler(' + this.fileEnding + ').writeFile() must be overwritten');
   }
 }
 
@@ -72,10 +71,7 @@ class Storage {
    */
   addFileHandler(handler) {
     if (this.fileHandlers.has(handler.fileEnding)) {
-      namida.logFailure(
-        this.toString(),
-        'can not add file handler for ' + handler.fileEnding + ', an entry already exists'
-      );
+      logger.error(LOG_TAG, 'can not add file handler for ' + handler.fileEnding + ', an entry already exists');
       return false;
     }
 
@@ -108,7 +104,7 @@ class Storage {
    */
   addEntry(key, entry) {
     if (this.hasEntry(key)) {
-      namida.logFailure(this.toString(), 'can not add entry "' + key + '", key already exists');
+      logger.error(LOG_TAG, 'can not add entry "' + key + '", key already exists');
       return false;
     }
 
@@ -137,10 +133,7 @@ class Storage {
    */
   updateEntry(key, newEntry) {
     if (!this.localEntries.has(key)) {
-      namida.logFailure(
-        this.toString(),
-        'could not update entry with key "' + newEntry.key + '", no such entry existing'
-      );
+      logger.error(LOG_TAG, 'could not update entry with key "' + newEntry.key + '", no such entry existing');
       return false;
     }
 
@@ -186,10 +179,7 @@ class Storage {
         }
       });
     } catch (error) {
-      namida.logFailure(
-        this.toString(),
-        'error while reading directory "' + directoryPath + '":\n' + error.stack.toString() 
-      );
+      logger.error(LOG_TAG, 'error while reading directory "' + directoryPath + '":\n' + error.stack.toString());
     }
   }
 
@@ -204,23 +194,15 @@ class Storage {
       let fileHandler = this.fileHandlers.get(fileEnding);
       let { key, value } = fileHandler.readFile(filepath);
       if (!this.isValidMapEntry(key, value)) {
-        namida.logFailure(
-          this.toString(),
-          'entry from file "' +
-            filepath +
-            '" is not valid: key exists = ' +
-            this.hasEntry(key) +
-            ', value = ' +
-            value
+        logger.error(
+          LOG_TAG,
+          'entry from file "' + filepath + '" is not valid: key exists = ' + this.hasEntry(key) + ', value = ' + value
         );
       } else {
         return { key, value };
       }
     } else {
-      namida.logFailure(
-        this.toString(),
-        'entry from file "' + filepath + '" can not be read, no known file ending ' + fileEnding
-      );
+      logger.error(LOG_TAG, 'entry from file "' + filepath + '" can not be read, no known file ending ' + fileEnding);
     }
   }
 
@@ -230,10 +212,7 @@ class Storage {
    */
   writeEntryToFile(entry) {
     if (!entry.fileName) {
-      namida.logFailure(
-        this.toString(),
-        'could not save entry "' + entry.fileName + '" to file, no file name given'
-      );
+      logger.error(LOG_TAG, 'could not save entry "' + entry.fileName + '" to file, no file name given');
       return;
     }
 

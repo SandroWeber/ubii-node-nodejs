@@ -1,6 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
+const LoggingService = require('../loggingService');
+
 let _instance = null;
 const SINGLETON_ENFORCER = Symbol();
 
@@ -11,9 +13,9 @@ const {
   DEFAULT_PORT_TOPICDATA_WS,
   DEFAULT_USE_HTTPS
 } = require('../networking/constants');
-const namida = require('@tum-far/namida');
 
-const LOG_TAG = 'ConfigService';
+const LOG_TAG = '[UBII ConfigService] ';
+const logger = LoggingService.instance.logger;
 
 class ConfigService {
   constructor(enforcer) {
@@ -47,9 +49,9 @@ class ConfigService {
     if (this.config.https && this.config.https.pathCert) {
       return this.getFullFilePath(this.config.https.pathCert);
     } else {
-      namida.warn(
-        LOG_TAG,
-        'config.json is missing a path for SSL certificate files (config.https.pathCert) - check config.json(.template)!'
+      logger.warn(
+        LOG_TAG +
+          'config.json is missing a path for SSL certificate files (config.https.pathCert) - check config.json(.template)!'
       );
     }
   }
@@ -58,9 +60,9 @@ class ConfigService {
     if (this.config.https && this.config.https.pathPrivateKey) {
       return this.getFullFilePath(this.config.https.pathPrivateKey);
     } else {
-      namida.warn(
-        LOG_TAG,
-        'config.json is missing a path for SSL private key (config.https.pathPrivateKey) - check config.json(.template)!'
+      logger.warn(
+        LOG_TAG +
+          'config.json is missing a path for SSL private key (config.https.pathPrivateKey) - check config.json(.template)!'
       );
     }
   }
@@ -69,9 +71,9 @@ class ConfigService {
     if (this.config.https && this.config.https.pathPublicKey) {
       return this.getFullFilePath(this.config.https.pathPublicKey);
     } else {
-      namida.warn(
-        LOG_TAG,
-        'config.json is missing a path for SSL public key (config.https.pathPublicKey) - check config.json(.template)!'
+      logger.warn(
+        LOG_TAG +
+          'config.json is missing a path for SSL public key (config.https.pathPublicKey) - check config.json(.template)!'
       );
     }
   }
@@ -88,9 +90,9 @@ class ConfigService {
     if (this.config.https && this.config.https.allowedOrigins) {
       return this.config.https.allowedOrigins;
     } else {
-      namida.warn(
-        LOG_TAG,
-        'config.json is missing settting for allowed origins (config.https.allowedOrigins) - check config.json(.template)!'
+      logger.warn(
+        LOG_TAG +
+          'config.json is missing settting for allowed origins (config.https.allowedOrigins) - check config.json(.template)!'
       );
     }
   }
@@ -99,9 +101,9 @@ class ConfigService {
     if (this.config.allowedHosts) {
       return this.config.allowedHosts;
     } else {
-      namida.warn(
-        LOG_TAG,
-        'config.json is missing settting for allowed origins (config.allowedHosts) - check config.json(.template)!'
+      logger.warn(
+        LOG_TAG +
+          'config.json is missing settting for allowed origins (config.allowedHosts) - check config.json(.template)!'
       );
     }
   }
