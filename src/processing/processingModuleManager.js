@@ -8,7 +8,7 @@ const ProcessingModuleProto = proto.ubii.processing.ProcessingModule;
 
 const Utils = require('../utilities');
 const { ProcessingModule } = require('./processingModule');
-const ProcessingModuleStorage = require('../storage/processingModuleStorage');
+//const ProcessingModuleStorage = require('../storage/processingModuleStorage');
 const DeviceManager = require('../devices/deviceManager');
 
 class ProcessingModuleManager extends EventEmitter {
@@ -44,19 +44,19 @@ class ProcessingModuleManager extends EventEmitter {
     }
 
     let pm = undefined;
-    if (ProcessingModuleStorage.instance.hasEntry(specs.name)) {
+    /*if (ProcessingModuleStorage.instance.hasEntry(specs.name)) {
       pm = ProcessingModuleStorage.instance.createInstance(specs);
-    } else {
-      // create new module based on specs
-      if (!specs.onProcessingStringified) {
-        namida.logFailure(
-          'ProcessingModuleManager',
-          'can\'t create PM "' + specs.name + '" based on specs, missing onProcessing definition.'
-        );
-        return undefined;
-      }
-      pm = new ProcessingModule(specs);
+    } else {*/
+    // create new module based on specs
+    if (!specs.onProcessingStringified) {
+      namida.logFailure(
+        'ProcessingModuleManager',
+        'can\'t create PM "' + specs.name + '" based on specs, missing onProcessing definition.'
+      );
+      return undefined;
     }
+    pm = new ProcessingModule(specs);
+    /*}*/
     pm.nodeId = this.nodeID;
 
     let success = this.addModule(pm);

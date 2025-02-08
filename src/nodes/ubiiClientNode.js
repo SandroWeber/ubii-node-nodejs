@@ -8,7 +8,7 @@ const ZmqDealer = require('../networking/zmqDealer');
 const ZmqRequest = require('../networking/zmqRequest');
 
 const ProcessingModuleManager = require('../processing/processingModuleManager');
-const ProcessingModuleStorage = require('../storage/processingModuleStorage');
+//const ProcessingModuleStorage = require('../storage/processingModuleStorage');
 const TopicDataProxy = require('./topicDataProxy');
 
 const LOG_TAG = 'Node';
@@ -55,9 +55,9 @@ class UbiiClientNode {
     let replyClientRegistration = await this.callService({
       topic: DEFAULT_TOPICS.SERVICES.CLIENT_REGISTRATION,
       client: {
-        name: this.name,
+        name: this.name/*,
         isDedicatedProcessingNode: true,
-        processingModules: ProcessingModuleStorage.instance.getAllSpecs()
+        processingModules: ProcessingModuleStorage.instance.getAllSpecs()*/
       }
     });
     if (replyClientRegistration.client) {

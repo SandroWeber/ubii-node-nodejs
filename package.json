@@ -25,18 +25,15 @@
     "@tum-far/namida": "0.1.1",
     "@tum-far/ubii-msg-formats": "0.16.6",
     "@tum-far/ubii-topic-data": "0.4.9",
-    "axios": "1.1.3",
-    "express": "4.17.1",
+    "axios": "1.7.9",
+    "express": "4.21.2",
     "shelljs": "0.8.5",
     "uuid": "8.3.2",
     "workerpool": "6.1.4",
-    "ws": "7.4.6",
+    "ws": "8.18.0",
     "zeromq": "5.2.8"
   },
-  "devDependencies": {
-    "@tensorflow/tfjs-node": "3.8.0",
-    "@tensorflow-models/coco-ssd": "2.2.2"
-  },
+  "devDependencies": {},
   "eslintConfig": {
     "root": true,
     "env": {
