@@ -21,6 +21,8 @@ class UbiiClientNode {
     this.topicDataConnection = topicDataConnection;
     this.publishIntervalMs = publishIntervalMs;
 
+    this.logger = logger;
+
     this.topicDataBuffer = new RuntimeTopicData();
     //TODO: for now we prevent direct publishing to local topicdata buffer
     // until smart distinguishing of topics owned by this node vs remote topics

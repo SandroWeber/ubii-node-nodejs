@@ -16,10 +16,7 @@ class LoggingService {
       /*level: 'info',
       defaultMeta: { service: 'user-service' },*/
       format: combine(timestamp(), prettyPrint()),
-      transports: [
-        new winston.transports.Console(),
-        new winston.transports.File({ filename: 'client-node-warn.log', level: 'warn' })
-      ]
+      transports: [new winston.transports.Console()]
     });
   }
 
