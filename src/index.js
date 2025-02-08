@@ -17,6 +17,7 @@ const ProcessingModuleManager = require('./processing/processingModuleManager');
 const ProcessingModuleStorage = require('./storage/processingModuleStorage');
 
 const Utils = require('./utilities');
+const LoggingService = require('./loggingService.js');
 
 module.exports = {
   UbiiClientNode,
@@ -32,5 +33,6 @@ module.exports = {
   ProcessingModule,
   ProcessingModuleManager,
   ProcessingModuleStorage,
-  Utils
+  Utils,
+  LoggingService
 };

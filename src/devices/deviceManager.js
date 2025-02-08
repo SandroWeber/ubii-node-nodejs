@@ -1,9 +1,12 @@
-const namida = require('@tum-far/namida');
 const TopicMuxer = require('./topicMuxer');
 const TopicDemuxer = require('./topicDemuxer');
+const LoggingService = require('../loggingService');
 
 let _instance = null;
 const SINGLETON_ENFORCER = Symbol();
+
+const LOG_TAG = '[UBII DeviceManager] ';
+const logger = LoggingService.instance.logger;
 
 class DeviceManager {
   constructor(enforcer) {
@@ -30,12 +33,12 @@ class DeviceManager {
 
   addDevice(device) {
     if (!device.id) {
-      namida.logFailure('DeviceManager', 'can not add device "' + device.name + '", missing ID');
+      logger.error(LOG_TAG + 'can not add device "' + device.name + '", missing ID');
       return false;
     }
 
     if (this.devices.has(device.id)) {
-      namida.logFailure('DeviceManager', 'can not add device "' + device.name + '", ID already exists');
+      logger.error(LOG_TAG + 'can not add device "' + device.name + '", ID already exists');
       return false;
     }
 
@@ -53,12 +56,12 @@ class DeviceManager {
 
   async createTopicMuxer(specs, topicDataBuffer = this.topicDataBuffer) {
     if (!specs.id) {
-      namida.logFailure('DeviceManager', 'can not create TopicMuxer "' + specs.name + '", missing ID');
+      logger.error(LOG_TAG + 'can not create TopicMuxer "' + specs.name + '", missing ID');
       return;
     }
 
     if (this.muxers.has(specs.id)) {
-      namida.logFailure('DeviceManager', 'can not create TopicMuxer "' + specs.name + '", ID already exists');
+      logger.error(LOG_TAG + 'can not create TopicMuxer "' + specs.name + '", ID already exists');
       return;
     }
 
@@ -75,12 +78,12 @@ class DeviceManager {
 
   createTopicDemuxer(specs, topicDataBuffer = this.topicDataBuffer) {
     if (!specs.id) {
-      namida.logFailure('DeviceManager', 'can not create TopicDemuxer "' + specs.name + '", missing ID');
+      logger.error(LOG_TAG + 'can not create TopicDemuxer "' + specs.name + '", missing ID');
       return;
     }
 
     if (this.demuxers.has(specs.id)) {
-      namida.logFailure('DeviceManager', 'can not create TopicDemuxer "' + specs.name + '", ID already exists');
+      logger.error(LOG_TAG + 'can not create TopicDemuxer "' + specs.name + '", ID already exists');
       return;
     }
 

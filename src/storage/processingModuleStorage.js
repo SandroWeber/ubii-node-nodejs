@@ -1,11 +1,15 @@
 const fs = require('fs');
 const path = require('path');
 
-const namida = require('@tum-far/namida/src/namida');
 const { ProtobufTranslator, MSG_TYPES } = require('@tum-far/ubii-msg-formats');
 
 const { Storage, FileHandler, StorageEntry } = require('./storage.js');
 const { ProcessingModule } = require('../processing/processingModule.js');
+const LoggingService = require('../loggingService');
+
+const LOG_TAG_FILE_PROTO = '[UBII PMFileHandlerProtobuf]';
+const LOG_TAG_FILE_JS = '[UBII PMFileHandlerJS]';
+const logger = LoggingService.instance.logger;
 
 class PMFileHandlerProtobuf extends FileHandler {
   constructor() {
@@ -15,10 +19,7 @@ class PMFileHandlerProtobuf extends FileHandler {
   readFile(filepath) {
     let filename = path.basename(filepath);
     if (path.extname(filename) !== this.fileEnding) {
-      namida.logFailure(
-        'PMFileHandlerProtobuf',
-        'file ' + filename + ' is not of type ' + this.fileEnding
-      );
+      logger.error(LOG_TAG_FILE_PROTO, 'file ' + filename + ' is not of type ' + this.fileEnding);
       return;
     }
 
@@ -53,10 +54,7 @@ class PMFileHandlerJS extends FileHandler {
   readFile(filepath) {
     let filename = path.basename(filepath);
     if (path.extname(filename) !== this.fileEnding) {
-      namida.logFailure(
-        'PMFileHandlerProtobuf',
-        'file ' + filename + ' is not of type ' + this.fileEnding
-      );
+      logger.error(LOG_TAG_FILE_JS, 'file ' + filename + ' is not of type ' + this.fileEnding);
       return;
     }
 
@@ -157,7 +155,7 @@ class ProcessingModuleStorage extends Storage {
   }
 
   getAllSpecs() {
-    return this.getAllLocalEntries().map(entry => entry.fileData.specs);
+    return this.getAllLocalEntries().map((entry) => entry.fileData.specs);
   }
 }
 

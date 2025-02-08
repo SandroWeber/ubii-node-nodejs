@@ -3,9 +3,11 @@
 const axios = require('axios');
 
 const { ProtobufTranslator, MSG_TYPES } = require('@tum-far/ubii-msg-formats');
-const namida = require("@tum-far/namida");
 
-const LOG_TAG = 'ServiceClientHTTP';
+const LoggingService = require('../loggingService');
+
+const LOG_TAG = '[UBII ServiceClientHTTP]';
+const logger = LoggingService.instance.logger;
 
 class ServiceClientHTTP {
   /**
@@ -24,7 +26,7 @@ class ServiceClientHTTP {
     } else if (this.format === ServiceClientHTTP.CONSTANTS.MSG_FORMAT_JSON) {
       this.sendRequest = this.sendJSON;
     } else {
-      namida.logFailure(LOG_TAG, `format "${format}" not recognized, must be "${ServiceClientHTTP.CONSTANTS.MSG_FORMAT_BINARY}" or "${ServiceClientHTTP.CONSTANTS.MSG_FORMAT_JSON}"`);
+      logger.error(LOG_TAG, `format "${format}" not recognized, must be "${ServiceClientHTTP.CONSTANTS.MSG_FORMAT_BINARY}" or "${ServiceClientHTTP.CONSTANTS.MSG_FORMAT_JSON}"`);
       throw new Error('message format not recognized');
     }
   }

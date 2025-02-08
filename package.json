@@ -22,13 +22,13 @@
   ],
   "main": "src/index.js",
   "dependencies": {
-    "@tum-far/namida": "0.1.1",
     "@tum-far/ubii-msg-formats": "0.16.6",
     "@tum-far/ubii-topic-data": "0.4.9",
     "axios": "1.7.9",
     "express": "4.21.2",
     "shelljs": "0.8.5",
     "uuid": "10.0.0",
+    "winston": "3.17.0",
     "workerpool": "9.2.0",
     "ws": "8.18.0",
     "zeromq": "6.3.0"

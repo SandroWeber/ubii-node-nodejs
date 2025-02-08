@@ -1,5 +1,9 @@
 const zmq = require('zeromq');
-const namida = require('@tum-far/namida/src/namida');
+
+const LoggingService = require('../loggingService');
+
+const LOG_TAG = '[UBII ZmqReply]';
+const logger = LoggingService.instance.logger;
 
 class ZmqReply {
   /**
@@ -28,7 +32,7 @@ class ZmqReply {
     // add callbacks
     this.socket.on('message', (request) => {
       if (!this.onMessage) {
-        namida.logFailure('ZMQ reply socket', 'no callback for message handling set!');
+        logger.error(LOG_TAG, 'no callback for message handling set!');
       } else {
         let replyBuffer = this.onMessage(request);
         this.socket.send(replyBuffer);

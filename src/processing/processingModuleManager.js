@@ -1,7 +1,6 @@
 const EventEmitter = require('events');
 const workerpool = require('workerpool');
 
-const namida = require('@tum-far/namida/src/namida');
 const { RuntimeTopicData } = require('@tum-far/ubii-topic-data');
 const { proto } = require('@tum-far/ubii-msg-formats');
 const ProcessingModuleProto = proto.ubii.processing.ProcessingModule;
@@ -10,6 +9,10 @@ const Utils = require('../utilities');
 const { ProcessingModule } = require('./processingModule');
 //const ProcessingModuleStorage = require('../storage/processingModuleStorage');
 const DeviceManager = require('../devices/deviceManager');
+const LoggingService = require('../loggingService');
+
+const LOG_TAG = '[UBII ProcessingModuleManager]';
+const logger = LoggingService.instance.logger;
 
 class ProcessingModuleManager extends EventEmitter {
   constructor(nodeID, topicData = undefined) {
@@ -37,10 +40,7 @@ class ProcessingModuleManager extends EventEmitter {
 
   createModule(specs) {
     if (specs.id && this.processingModules.has(specs.id)) {
-      namida.logFailure(
-        'ProcessingModuleManager',
-        "can't create module " + specs.name + ', ID already exists: ' + specs.id
-      );
+      logger.error(LOG_TAG, "can't create module " + specs.name + ', ID already exists: ' + specs.id);
     }
 
     let pm = undefined;
@@ -49,10 +49,7 @@ class ProcessingModuleManager extends EventEmitter {
     } else {*/
     // create new module based on specs
     if (!specs.onProcessingStringified) {
-      namida.logFailure(
-        'ProcessingModuleManager',
-        'can\'t create PM "' + specs.name + '" based on specs, missing onProcessing definition.'
-      );
+      logger.error(LOG_TAG, 'can\'t create PM "' + specs.name + '" based on specs, missing onProcessing definition.');
       return undefined;
     }
     pm = new ProcessingModule(specs);
@@ -75,14 +72,14 @@ class ProcessingModuleManager extends EventEmitter {
 
       return true;
     } catch (error) {
-      namida.logFailure(this.toString(), 'PM initialization error:\n' + error);
+      logger.error(LOG_TAG, 'PM initialization error:\n' + error);
       return false;
     }
   }
 
   addModule(pm) {
     if (!pm.id) {
-      namida.logFailure('ProcessingModuleManager', 'module ' + pm.name + " does not have an ID, can't add");
+      logger.error(LOG_TAG, 'module ' + pm.name + " does not have an ID, can't add");
       return false;
     }
     this.processingModules.set(pm.id, pm);
@@ -91,7 +88,7 @@ class ProcessingModuleManager extends EventEmitter {
 
   removeModule(pmSpecs) {
     if (!pmSpecs.id) {
-      namida.logFailure('ProcessingModuleManager', 'module ' + pmSpecs.name + " does not have an ID, can't remove");
+      logger.error(LOG_TAG, 'module ' + pmSpecs.name + " does not have an ID, can't remove");
       return false;
     }
 
@@ -131,10 +128,7 @@ class ProcessingModuleManager extends EventEmitter {
     }
 
     if (candidates.length > 1) {
-      namida.logFailure(
-        'ProcessingModuleManager',
-        'trying to get PM by name (' + name + ') resulted in multiple candidates'
-      );
+      logger.error(LOG_TAG, 'trying to get PM by name (' + name + ') resulted in multiple candidates');
     } else {
       return candidates[0];
     }
@@ -201,8 +195,8 @@ class ProcessingModuleManager extends EventEmitter {
       let processingModule =
         this.getModuleByID(mapping.processingModuleId) || this.getModuleByName(mapping.processingModuleName, sessionID);
       if (!processingModule) {
-        namida.logFailure(
-          'ProcessingModuleManager',
+        logger.error(
+          LOG_TAG,
           "can't find processing module for I/O mapping, given: ID = " +
             mapping.processingModuleId +
             ', name = ' +
@@ -227,8 +221,8 @@ class ProcessingModuleManager extends EventEmitter {
 
     for (let inputMapping of inputMappings) {
       if (!this.isValidIOMapping(processingModule, inputMapping)) {
-        namida.logFailure(
-          'ProcessingModuleManager',
+        logger.error(
+          LOG_TAG,
           'IO-Mapping for module ' + processingModule.name + '->' + inputMapping.inputName + ' is invalid'
         );
         return;
@@ -310,15 +304,15 @@ class ProcessingModuleManager extends EventEmitter {
 
     for (let outputMapping of outputMappings) {
       if (!this.isValidIOMapping(processingModule, outputMapping)) {
-        namida.logFailure(
-          'ProcessingModuleManager',
+        logger.error(
+          LOG_TAG,
           'OutputMapping for module ' +
             processingModule.toString() +
             ' -> "' +
             outputMapping.outputName +
             '" is invalid'
         );
-        namida.logFailure('ProcessingModuleManager', outputMapping);
+        logger.error(LOG_TAG, outputMapping);
         return;
       }
 
@@ -334,8 +328,8 @@ class ProcessingModuleManager extends EventEmitter {
 
         processingModule.setOutputSetter(outputMapping.outputName, (record) => {
           if (!record[type]) {
-            namida.logFailure(
-              processingModule.toString(),
+            logger.error(
+              LOG_TAG + processingModule.toString(),
               'Output "' +
                 outputMapping.outputName +
                 '" (topic=' +

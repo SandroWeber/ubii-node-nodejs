@@ -1,11 +1,13 @@
 /* eslint-disable no-console */
-const namida = require('@tum-far/namida');
 const WebSocket = require('ws');
+
+const LoggingService = require('../loggingService');
 
 const MSG_PING = 'PING';
 const MSG_PONG = 'PONG';
 
-const LOG_TAG = 'TopicData Client WS';
+const LOG_TAG = '[UBII TopicDataClientWS]';
+const logger = LoggingService.instance.logger;
 
 class TopicDataClientWS {
   /**
@@ -48,7 +50,7 @@ class TopicDataClientWS {
       }
 
       if (!this.processMessage) {
-        namida.logFailure(LOG_TAG, 'message processing callback not set, use setCbOnMessageReceived()');
+        logger.error(LOG_TAG, 'message processing callback not set, use setCbOnMessageReceived()');
       } else {
         this.processMessage(new Uint8Array(message.data));
       }
