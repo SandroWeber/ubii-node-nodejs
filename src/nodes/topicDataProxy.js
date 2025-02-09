@@ -40,11 +40,17 @@ class TopicDataProxy {
       try {
         let replySubscribe = await this.ubiiNode.callService(message);
         if (replySubscribe.error) {
-          logger.error(LOG_TAG, 'server error during subscribe to "' + topic + '": ' + replySubscribe.error);
+          logger.error({
+            label: LOG_TAG,
+            message: 'server error during subscribe to "' + topic + '": ' + replySubscribe.error
+          });
           return replySubscribe.error;
         }
       } catch (error) {
-        logger.error(LOG_TAG, 'local error during subscribe to "' + topic + '": ' +  error);
+        logger.error({
+          label: LOG_TAG,
+          message: 'local error during subscribe to "' + topic + '": ' + error
+        });
         return error;
       }
     }
@@ -78,7 +84,10 @@ class TopicDataProxy {
           return replySubscribe.error;
         }
       } catch (error) {
-        logger.error(LOG_TAG, error);
+        logger.error({
+          label: LOG_TAG,
+          message: error
+        });
         return error;
       }
     }
@@ -123,7 +132,10 @@ class TopicDataProxy {
           return replySubscribe.error;
         }
       } catch (error) {
-        logger.error(LOG_TAG, error);
+        logger.error({
+          label: LOG_TAG,
+          message: error
+        });
         return error;
       }
     }
@@ -169,7 +181,10 @@ class TopicDataProxy {
       });
       this.ubiiNode.topicDataClient.send(buffer);
     } catch (error) {
-      logger.error(LOG_TAG, 'failed to send data: ' + error);
+      logger.error({
+        label: LOG_TAG,
+        message: 'failed to send data: ' + error
+      });
     }
 
     //TODO: as soon as master node has smart distinction of topic ownership for clients and will not send back

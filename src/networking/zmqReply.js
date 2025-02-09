@@ -27,12 +27,15 @@ class ZmqReply {
 
   start() {
     // init
-    this.socket = zmq.socket('rep');
+    this.socket = new zmq.Reply();
 
     // add callbacks
     this.socket.on('message', (request) => {
       if (!this.onMessage) {
-        logger.error(LOG_TAG, 'no callback for message handling set!');
+        logger.error({
+          label: LOG_TAG,
+          message: 'no callback for message handling set!'
+        });
       } else {
         let replyBuffer = this.onMessage(request);
         this.socket.send(replyBuffer);

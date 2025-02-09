@@ -33,12 +33,18 @@ class DeviceManager {
 
   addDevice(device) {
     if (!device.id) {
-      logger.error(LOG_TAG + 'can not add device "' + device.name + '", missing ID');
+      logger.error({
+        label: LOG_TAG,
+        message: 'can not add device "' + device.name + '", missing ID'
+      });
       return false;
     }
 
     if (this.devices.has(device.id)) {
-      logger.error(LOG_TAG + 'can not add device "' + device.name + '", ID already exists');
+      logger.error({
+        label: LOG_TAG,
+        message: 'can not add device "' + device.name + '", ID already exists'
+      });
       return false;
     }
 
@@ -56,12 +62,18 @@ class DeviceManager {
 
   async createTopicMuxer(specs, topicDataBuffer = this.topicDataBuffer) {
     if (!specs.id) {
-      logger.error(LOG_TAG + 'can not create TopicMuxer "' + specs.name + '", missing ID');
+      logger.error({
+        label: LOG_TAG,
+        message: 'can not create TopicMuxer "' + specs.name + '", missing ID'
+      });
       return;
     }
 
     if (this.muxers.has(specs.id)) {
-      logger.error(LOG_TAG + 'can not create TopicMuxer "' + specs.name + '", ID already exists');
+      logger.error({
+        label: LOG_TAG,
+        message: 'can not create TopicMuxer "' + specs.name + '", ID already exists'
+      });
       return;
     }
 
@@ -78,12 +90,18 @@ class DeviceManager {
 
   createTopicDemuxer(specs, topicDataBuffer = this.topicDataBuffer) {
     if (!specs.id) {
-      logger.error(LOG_TAG + 'can not create TopicDemuxer "' + specs.name + '", missing ID');
+      logger.error({
+        label: LOG_TAG,
+        message: 'can not create TopicDemuxer "' + specs.name + '", missing ID'
+      });
       return;
     }
 
     if (this.demuxers.has(specs.id)) {
-      logger.error(LOG_TAG + 'can not create TopicDemuxer "' + specs.name + '", ID already exists');
+      logger.error({
+        label: LOG_TAG,
+        message: 'can not create TopicDemuxer "' + specs.name + '", ID already exists'
+      });
       return;
     }
 

@@ -33,12 +33,15 @@ class ZmqRequest {
 
   start() {
     // init
-    this.socket = zmq.socket('req');
+    this.socket = zmq.Request();
 
     // add callbacks
     this.socket.on('message', (response) => {
       if (!this.onResponse) {
-        logger.error(LOG_TAG, 'no callback for response handling set!');
+        logger.error({
+          label: LOG_TAG,
+          message: 'no callback for response handling set!'
+        });
       } else {
         let responseMsg = this.serviceReplyTranslator.createMessageFromBuffer(response);
         this.onResponse(responseMsg);

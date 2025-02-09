@@ -34,7 +34,7 @@ class ZmqRouter {
    */
   start() {
     // init
-    this.socket = zmq.socket('router');
+    this.socket = zmq.Router();
     this.socket.identity = this.identity;
 
     // add callbacks
@@ -55,7 +55,10 @@ class ZmqRouter {
       }
 
       if (!this.onMessage) {
-        logger.error(LOG_TAG, 'no callback for message handling (onMessage) set!');
+        logger.error({
+          label: LOG_TAG,
+          message: 'no callback for message handling (onMessage) set!'
+        });
       } else {
         this.onMessage(envelope, payload);
       }

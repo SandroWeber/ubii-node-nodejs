@@ -49,10 +49,11 @@ class ConfigService {
     if (this.config.https && this.config.https.pathCert) {
       return this.getFullFilePath(this.config.https.pathCert);
     } else {
-      logger.warn(
-        LOG_TAG +
+      logger.warn({
+        label: LOG_TAG,
+        message:
           'config.json is missing a path for SSL certificate files (config.https.pathCert) - check config.json(.template)!'
-      );
+      });
     }
   }
 
@@ -60,10 +61,11 @@ class ConfigService {
     if (this.config.https && this.config.https.pathPrivateKey) {
       return this.getFullFilePath(this.config.https.pathPrivateKey);
     } else {
-      logger.warn(
-        LOG_TAG +
+      logger.warn({
+        label: LOG_TAG,
+        message:
           'config.json is missing a path for SSL private key (config.https.pathPrivateKey) - check config.json(.template)!'
-      );
+      });
     }
   }
 
@@ -71,10 +73,11 @@ class ConfigService {
     if (this.config.https && this.config.https.pathPublicKey) {
       return this.getFullFilePath(this.config.https.pathPublicKey);
     } else {
-      logger.warn(
-        LOG_TAG +
+      logger.warn({
+        label: LOG_TAG,
+        message:
           'config.json is missing a path for SSL public key (config.https.pathPublicKey) - check config.json(.template)!'
-      );
+      });
     }
   }
 
@@ -90,10 +93,11 @@ class ConfigService {
     if (this.config.https && this.config.https.allowedOrigins) {
       return this.config.https.allowedOrigins;
     } else {
-      logger.warn(
-        LOG_TAG +
+      logger.warn({
+        label: LOG_TAG,
+        message:
           'config.json is missing settting for allowed origins (config.https.allowedOrigins) - check config.json(.template)!'
-      );
+      });
     }
   }
 
@@ -101,10 +105,11 @@ class ConfigService {
     if (this.config.allowedHosts) {
       return this.config.allowedHosts;
     } else {
-      logger.warn(
-        LOG_TAG +
+      logger.warn({
+        label: LOG_TAG,
+        message:
           'config.json is missing settting for allowed origins (config.allowedHosts) - check config.json(.template)!'
-      );
+      });
     }
   }
 

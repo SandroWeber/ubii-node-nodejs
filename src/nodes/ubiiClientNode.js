@@ -47,7 +47,10 @@ class UbiiClientNode {
     if (replyServerSpec.server) {
       this.serverSpecification = replyServerSpec.server;
     } else {
-      logger.error(LOG_TAG, 'server config request failed');
+      logger.error({
+        label: LOG_TAG,
+        message: 'server config request failed'
+      });
       return;
     }
 
@@ -62,9 +65,15 @@ class UbiiClientNode {
     });
     if (replyClientRegistration.client) {
       this.clientSpecification = replyClientRegistration.client;
-      logger.info(LOG_TAG + ' successfully registered at master node');
+      logger.info({
+        label: LOG_TAG,
+        message: ' successfully registered at master node'
+      });
     } else {
-      logger.error('UbiiNode.initialize()', 'client registration failed');
+      logger.error({
+        label: LOG_TAG,
+        message: 'client registration failed'
+      });
       return;
     }
 
@@ -142,7 +151,10 @@ class UbiiClientNode {
 
     if (this.serviceConnection.address.startsWith('tcp://')) {
       if (this.serviceConnection.format) {
-        logger.warn(LOG_TAG, `config parameter "format" not supported for tcp protocol, always uses binary`);
+        logger.warn({
+          label: LOG_TAG,
+          message: `config parameter "format" not supported for tcp protocol, always uses binary`
+        });
       }
       let [protocol, address] = this.serviceConnection.address.split('://');
       this.serviceClient = new ZmqRequest(protocol, address);
@@ -156,10 +168,10 @@ class UbiiClientNode {
 
   connectTopicdataSocket() {
     if (!this.serverSpecification || !this.clientSpecification) {
-      logger.error(
-        'Ubii Node',
-        "can't connect topic data socket, missing specifications for port and client configuration"
-      );
+      logger.error({
+        label: LOG_TAG,
+        message: "can't connect topic data socket, missing specifications for port and client configuration"
+      });
     }
 
     this.translatorTopicData = new ProtobufTranslator(MSG_TYPES.TOPIC_DATA);
@@ -171,14 +183,20 @@ class UbiiClientNode {
       this.topicDataClient = new TopicDataClientWS(this.clientSpecification.id, this.topicDataConnection.address);
       this.topicDataClient.setCbOnMessageReceived(this._onTopicDataMessageReceived.bind(this));
     } else {
-      logger.error(LOG_TAG, `topic data address ${this.topicDataConnection.address} protocol not recognized`);
+      logger.error({
+        label: LOG_TAG,
+        message: `topic data address ${this.topicDataConnection.address} protocol not recognized`
+      });
     }
   }
 
   _onTopicDataMessageReceived(messageBuffer) {
     let topicdataMsg = this.translatorTopicData.createPayloadFromBuffer(messageBuffer);
     if (!topicdataMsg) {
-      logger.error('TopicData received', 'could not parse topic data message from buffer');
+      logger.error({
+        label: LOG_TAG,
+        message: 'could not parse topic data message from buffer'
+      });
       return;
     }
 
@@ -189,7 +207,10 @@ class UbiiClientNode {
       try {
         this.topicDataBuffer.publish(record.topic, record);
       } catch (error) {
-        logger.error('TopicData received', 'topic "' + record.topic + '"\n' + error);
+        logger.error({
+          label: LOG_TAG,
+          message: 'topic "' + record.topic + '"\n' + error
+        });
       }
     });
   }
@@ -220,7 +241,10 @@ class UbiiClientNode {
     };
     let response = await this.callService(pmRuntimeAddRequest);
     if (response.error) {
-      logger.error('PM_RUNTIME_ADD error', response.error);
+      logger.error({
+        label: LOG_TAG,
+        message: response.error
+      });
     }
   }
 
@@ -271,7 +295,10 @@ class UbiiClientNode {
     };
     let response = await this.callService(pmRuntimeRemoveRequest);
     if (response.error) {
-      logger.error('PM_RUNTIME_REMOVE error', response.error);
+      logger.error({
+        label: LOG_TAG,
+        message: response.error
+      });
     }
   }
 

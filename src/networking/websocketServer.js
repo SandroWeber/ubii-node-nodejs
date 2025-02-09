@@ -101,7 +101,10 @@ class WebsocketServer {
       }
 
       if (!this.onMessage) {
-        logger.error(LOG_TAG, 'no callback for message handling set!');
+        logger.error({
+          label: LOG_TAG,
+          message: 'no callback for message handling set!'
+        });
       } else {
         this.onMessage(clientID, message);
       }

@@ -35,7 +35,7 @@ class ZmqDealer {
    */
   start() {
     // init
-    this.socket = zmq.socket('dealer');
+    this.socket = zmq.Dealer();
     this.socket.identity = this.identity;
 
     // add callbacks
@@ -51,7 +51,10 @@ class ZmqDealer {
       }
 
       if (!this.onMessage) {
-        logger.error(LOG_TAG, 'no callback for message handling set!');
+        logger.error({
+          label: LOG_TAG,
+          message: 'no callback for message handling set!'
+        });
       } else {
         this.onMessage(payload);
       }

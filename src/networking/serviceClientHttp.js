@@ -26,7 +26,10 @@ class ServiceClientHTTP {
     } else if (this.format === ServiceClientHTTP.CONSTANTS.MSG_FORMAT_JSON) {
       this.sendRequest = this.sendJSON;
     } else {
-      logger.error(LOG_TAG, `format "${format}" not recognized, must be "${ServiceClientHTTP.CONSTANTS.MSG_FORMAT_BINARY}" or "${ServiceClientHTTP.CONSTANTS.MSG_FORMAT_JSON}"`);
+      logger.error({
+        label: LOG_TAG,
+        message: `format "${format}" not recognized, must be "${ServiceClientHTTP.CONSTANTS.MSG_FORMAT_BINARY}" or "${ServiceClientHTTP.CONSTANTS.MSG_FORMAT_JSON}"`
+      });
       throw new Error('message format not recognized');
     }
   }

@@ -50,7 +50,10 @@ class TopicDataClientWS {
       }
 
       if (!this.processMessage) {
-        logger.error(LOG_TAG, 'message processing callback not set, use setCbOnMessageReceived()');
+        logger.error({
+          label: LOG_TAG,
+          message: 'message processing callback not set, use setCbOnMessageReceived()'
+        });
       } else {
         this.processMessage(new Uint8Array(message.data));
       }

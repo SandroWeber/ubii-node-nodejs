@@ -24,11 +24,12 @@ class ProcessingModule extends EventEmitter {
     // check that language specification for module is correct
     if (this.language === undefined) this.language = ProcessingModuleProto.Language.JS;
     if (this.language !== ProcessingModuleProto.Language.JS) {
-      logger.error(
-        LOG_TAG + this.toString(),
-        'trying to create module under javascript, but specification says ' +
+      logger.error({
+        label: this.toString(),
+        message:
+          'trying to create module under javascript, but specification says ' +
           ProcessingModuleProto.Language[this.language]
-      );
+      });
       throw new Error(
         'Incompatible language specifications (javascript vs. ' + ProcessingModuleProto.Language[this.language] + ')'
       );
@@ -76,7 +77,7 @@ class ProcessingModule extends EventEmitter {
       this.openWorkerpoolExecutions = [];
     }
     if (!this.processingMode) {
-      logger.error(LOG_TAG, this.toString(), 'no processing mode specified, can not start processing');
+      logger.error({ label: this.toString(), message: 'no processing mode specified, can not start processing' });
       return false;
     }
 
@@ -89,13 +90,13 @@ class ProcessingModule extends EventEmitter {
     }
 
     if (this.status === ProcessingModuleProto.Status.PROCESSING) {
-      let message = 'started';
+      let msg = 'started';
       if (this.workerPool) {
-        message += ' (using workerpool)';
+        msg += ' (using workerpool)';
       } else {
-        message += ' (without workerpool)';
+        msg += ' (without workerpool)';
       }
-      logger.info(LOG_TAG, this.toString(), message);
+      logger.info({ label: this.toString(), message: msg });
       return true;
     }
 
@@ -121,7 +122,7 @@ class ProcessingModule extends EventEmitter {
       }
     }
 
-    logger.info(LOG_TAG, this.toString(), 'stopped');
+    logger.info({ label: this.toString(), message: 'stopped' });
 
     return true;
   }
@@ -238,7 +239,10 @@ class ProcessingModule extends EventEmitter {
           .catch((error) => {
             if (!error.message || error.message !== 'promise cancelled') {
               // executuion was not just cancelled via workerpool API
-              logger.error(LOG_TAG, this.toString(), 'workerpool execution failed - ' + error + '\n' + error.stack);
+              logger.error({
+                label: this.toString(),
+                message: 'workerpool execution failed - ' + error + '\n' + error.stack
+              });
             }
           });
         this.openWorkerpoolExecutions.push(wpExecPromise);
@@ -485,7 +489,7 @@ class ProcessingModule extends EventEmitter {
   }
 
   toString() {
-    return 'ProcessingModule ' + this.name + ' (ID ' + this.id + ')';
+    return '[UBII ProcessingModule ' + this.name + ' (ID ' + this.id + ')]';
   }
 
   toProtobuf() {
