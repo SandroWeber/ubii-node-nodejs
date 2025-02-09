@@ -33,7 +33,7 @@ class ZmqRequest {
 
   start() {
     // init
-    this.socket = zmq.Request();
+    this.socket = zmq.socket('req');
 
     // add callbacks
     this.socket.on('message', (response) => {

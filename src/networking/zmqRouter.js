@@ -34,7 +34,7 @@ class ZmqRouter {
    */
   start() {
     // init
-    this.socket = zmq.Router();
+    this.socket = zmq.socket('router');
     this.socket.identity = this.identity;
 
     // add callbacks

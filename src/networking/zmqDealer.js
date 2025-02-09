@@ -35,7 +35,7 @@ class ZmqDealer {
    */
   start() {
     // init
-    this.socket = zmq.Dealer();
+    this.socket = zmq.socket('dealer');
     this.socket.identity = this.identity;
 
     // add callbacks

@@ -27,7 +27,7 @@ class ZmqReply {
 
   start() {
     // init
-    this.socket = new zmq.Reply();
+    this.socket = zmq.socket('rep');
 
     // add callbacks
     this.socket.on('message', (request) => {
