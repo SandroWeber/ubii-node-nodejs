@@ -31,7 +31,7 @@
     "winston": "3.17.0",
     "workerpool": "9.2.0",
     "ws": "8.18.0",
-    "zeromq": "6.3.0"
+    "zeromq": "5.2.8"
   },
   "devDependencies": {},
   "eslintConfig": {
