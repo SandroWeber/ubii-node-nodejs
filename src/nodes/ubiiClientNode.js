@@ -67,7 +67,7 @@ class UbiiClientNode {
       this.clientSpecification = replyClientRegistration.client;
       logger.info({
         label: LOG_TAG,
-        message: ' successfully registered at master node'
+        message: 'successfully registered at master node'
       });
     } else {
       logger.error({

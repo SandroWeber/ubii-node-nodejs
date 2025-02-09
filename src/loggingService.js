@@ -1,5 +1,5 @@
 const winston = require('winston');
-const { combine, timestamp, label, prettyPrint } = winston.format;
+const { combine, timestamp, colorize, printf } = winston.format;
 
 let _instance = null;
 const SINGLETON_ENFORCER = Symbol();
@@ -13,10 +13,22 @@ class LoggingService {
     }
 
     this.logger = winston.createLogger({
-      /*level: 'info',
-      defaultMeta: { service: 'user-service' },*/
-      format: combine(timestamp(), prettyPrint()),
-      transports: [new winston.transports.Console()]
+      transports: [
+        new winston.transports.Console({
+          timestamp: function () {
+            return Date.now();
+          },
+          format: combine(
+            winston.format((log) => ({ ...log, level: log.level.toUpperCase() }))(),
+            colorize(),
+            timestamp({
+              format: 'YYYY-MM-DD HH:mm:ss.SSS'
+            }),
+            winston.format.errors({ stack: true }),
+            printf((log) => `[${log.timestamp}] ${log.level} ${log.label} ${log.message}`)
+          )
+        })
+      ]
     });
   }
 
