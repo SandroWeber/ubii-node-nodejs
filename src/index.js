@@ -5,10 +5,6 @@ const ConfigService = require('./config/configService');
 const ServiceClientHTTP = require('./networking/serviceClientHttp.js');
 const HTTPServer = require('./networking/httpServer');
 const WebsocketServer = require('./networking/websocketServer');
-const ZmqDealer = require('./networking/zmqDealer');
-const ZmqReply = require('./networking/zmqReply');
-const ZmqRequest = require('./networking/zmqRequest');
-const ZmqRouter = require('./networking/zmqRouter');
 
 const ExternalLibrariesService = require('./processing/externalLibrariesService');
 const { ProcessingModule } = require('./processing/processingModule');
@@ -25,10 +21,6 @@ module.exports = {
   ServiceClientHTTP,
   HTTPServer,
   WebsocketServer,
-  ZmqDealer,
-  ZmqReply,
-  ZmqRequest,
-  ZmqRouter,
   ExternalLibrariesService,
   ProcessingModule,
   ProcessingModuleManager,

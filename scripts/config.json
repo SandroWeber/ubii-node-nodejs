@@ -1,10 +1,11 @@
 {
     "masterNode": {
         "services": {
-            "address": "tcp://localhost:8101"
+            "address": "http://localhost:8102/services/json",
+            "format": "JSON"
         },
         "topicdata": {
-            "address": "tcp://localhost:8103"
+            "address": "ws://localhost:8104"
         }
     }
 }

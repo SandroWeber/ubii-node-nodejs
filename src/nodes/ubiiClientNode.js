@@ -3,9 +3,6 @@ const { RuntimeTopicData } = require('@tum-far/ubii-topic-data');
 const ServiceClientHTTP = require('../networking/serviceClientHttp.js');
 const TopicDataClientWS = require('../networking/topicDataClientWS.js');
 
-const ZmqDealer = require('../networking/zmqDealer');
-const ZmqRequest = require('../networking/zmqRequest');
-
 const ProcessingModuleManager = require('../processing/processingModuleManager');
 //const ProcessingModuleStorage = require('../storage/processingModuleStorage');
 const TopicDataProxy = require('./topicDataProxy');
@@ -16,6 +13,14 @@ const logger = LoggingService.instance.logger;
 
 class UbiiClientNode {
   constructor(name, serviceConnection, topicDataConnection, publishIntervalMs = 15) {
+    if (!serviceConnection.address || !topicDataConnection.address) {
+      logger.error({
+        label: UbiiClientNode.LOG_TAG,
+        message:
+          'missing master node connection(s)! service=' + serviceConnection.address + ', topicdata=' + topicDataConnection.address
+      });
+      throw new Error("missing crucial information regarding connection to master node");
+    }
     this.name = name;
     this.serviceConnection = serviceConnection;
     this.topicDataConnection = topicDataConnection;
@@ -149,7 +154,7 @@ class UbiiClientNode {
     //this.serviceRequestTranslator = new ProtobufTranslator(MSG_TYPES.SERVICE_REQUEST);
     //this.serviceReplyTranslator = new ProtobufTranslator(MSG_TYPES.SERVICE_REPLY);
 
-    if (this.serviceConnection.address.startsWith('tcp://')) {
+    /*if (this.serviceConnection.address.startsWith('tcp://')) {
       if (this.serviceConnection.format) {
         logger.warn({
           label: LOG_TAG,
@@ -158,7 +163,7 @@ class UbiiClientNode {
       }
       let [protocol, address] = this.serviceConnection.address.split('://');
       this.serviceClient = new ZmqRequest(protocol, address);
-    } else if (this.serviceConnection.address.startsWith('http')) {
+    } else*/ if (this.serviceConnection.address.startsWith('http')) {
       this.serviceClient = new ServiceClientHTTP(
         this.serviceConnection.address,
         this.serviceConnection.format.toUpperCase()
@@ -175,11 +180,11 @@ class UbiiClientNode {
     }
 
     this.translatorTopicData = new ProtobufTranslator(MSG_TYPES.TOPIC_DATA);
-    if (this.topicDataConnection.address.startsWith('tcp://')) {
+    /*if (this.topicDataConnection.address.startsWith('tcp://')) {
       let [protocol, address] = this.topicDataConnection.address.split('://');
       this.topicDataClient = new ZmqDealer(this.clientSpecification.id, protocol, address);
       this.topicDataClient.setCallbackOnMessage(this._onTopicDataMessageReceived.bind(this));
-    } else if (this.topicDataConnection.address.startsWith('ws')) {
+    } else*/ if (this.topicDataConnection.address.startsWith('ws')) {
       this.topicDataClient = new TopicDataClientWS(this.clientSpecification.id, this.topicDataConnection.address);
       this.topicDataClient.setCbOnMessageReceived(this._onTopicDataMessageReceived.bind(this));
     } else {

@@ -12,10 +12,8 @@ const logger = LoggingService.instance.logger;
 
 class WebsocketServer {
   /**
-   * Communication endpoint implementing the zmq router pattern.
+   * Communication endpoint for asynchronous communication.
    * @param {*} port Port to bind.
-   * @param {*} onReceive Callback function that is called when a new message is received from a dealer.
-   * Accepts an envelope parameter containing the client identity and a string parameter with the received message
    * @param {*} autoconnect Should the socket connect directly after the initialization of the object?
    * If not, the start method must be called manually.
    */
@@ -75,7 +73,7 @@ class WebsocketServer {
   }
 
   /**
-   * Communication endpoint implementing the zmq router pattern.
+   * Callback for newly established connections.
    * @param {*} websocket The websocket for the new connection.
    * @param {*} request The request for the new connection.
    */

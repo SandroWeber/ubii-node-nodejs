@@ -10,7 +10,7 @@ const ConfigService = require('../config/configService');
 
 class HTTPServer {
   /**
-   * Communication endpoint implementing the zmq reply pattern.
+   * Communication endpoint implementing the reply pattern.
    * @param {*} port Port to bind.
    * @param {*} autoBind Should the socket bind directly after the initialization of the object?
    * If not, the start method must be called manually.

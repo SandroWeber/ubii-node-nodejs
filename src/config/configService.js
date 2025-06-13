@@ -7,9 +7,9 @@ let _instance = null;
 const SINGLETON_ENFORCER = Symbol();
 
 const {
-  DEFAULT_PORT_SERVICE_ZMQ,
-  DEFAULT_PORT_SERVICE_REST,
-  DEFAULT_PORT_TOPICDATA_ZMQ,
+  DEFAULT_PORT_SERVICE_TCP,
+  DEFAULT_PORT_TOPICDATA_TCP,
+  DEFAULT_PORT_SERVICE_HTTP,
   DEFAULT_PORT_TOPICDATA_WS,
   DEFAULT_USE_HTTPS
 } = require('../networking/constants');
@@ -113,22 +113,22 @@ class ConfigService {
     }
   }
 
-  getPortServiceZMQ() {
-    return typeof this.config.ports.serviceZMQ !== 'undefined'
-      ? this.config.ports.serviceZMQ
-      : DEFAULT_PORT_SERVICE_ZMQ;
+  getPortServiceTCP() {
+    return typeof this.config.ports.serviceTCP !== 'undefined'
+      ? this.config.ports.serviceTCP
+      : DEFAULT_PORT_SERVICE_TCP;
   }
 
   getPortServiceREST() {
     return typeof this.config.ports.serviceREST !== 'undefined'
       ? this.config.ports.serviceREST
-      : DEFAULT_PORT_SERVICE_REST;
+      : DEFAULT_PORT_SERVICE_HTTP;
   }
 
-  getPortTopicdataZMQ() {
-    return typeof this.config.ports.topicdataZMQ !== 'undefined'
-      ? this.config.ports.topicdataZMQ
-      : DEFAULT_PORT_TOPICDATA_ZMQ;
+  getPortTopicdataTCP() {
+    return typeof this.config.ports.topicdataTCP !== 'undefined'
+      ? this.config.ports.topicdataTCP
+      : DEFAULT_PORT_TOPICDATA_TCP;
   }
 
   getPortTopicdataWS() {
